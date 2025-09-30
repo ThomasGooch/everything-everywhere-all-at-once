@@ -1,0 +1,556 @@
+# GitHub Plugin Configuration
+# =============================================================================
+
+# Plugin Information
+plugin:
+  name: "github"
+  version: "1.0.0"
+  description: "GitHub integration for version control and repository management"
+  author: "AI Dev Orchestrator Team"
+
+# Connection Settings
+connection:
+  # GitHub API base URL (use https://api.github.com for GitHub.com)
+  api_url: "https://api.github.com"
+  
+  # Authentication
+  token: "${GITHUB_TOKEN}"
+  
+  # Alternative: GitHub App authentication
+  # app_auth:
+  #   app_id: "${GITHUB_APP_ID}"
+  #   private_key: "${GITHUB_PRIVATE_KEY}"
+  #   installation_id: "${GITHUB_INSTALLATION_ID}"
+  
+  # Connection settings
+  timeout: 45
+  max_retries: 3
+  retry_backoff: 2
+  verify_ssl: true
+  
+  # Rate limiting (GitHub allows 5000 requests/hour for authenticated users)
+  rate_limit:
+    requests_per_hour: 4500  # Leave some buffer
+    burst_limit: 100
+
+# Default Organization/User Settings
+organization:
+  # GitHub organization or username
+  name: "${GITHUB_ORG}"
+  
+  # Default settings for repositories
+  defaults:
+    # Default branch name
+    default_branch: "main"
+    
+    # Repository visibility
+    private: true
+    
+    # Repository features
+    has_issues: true
+    has_wiki: true
+    has_projects: true
+    has_discussions: false
+    
+    # Security settings
+    delete_branch_on_merge: true
+    allow_squash_merge: true
+    allow_merge_commit: false
+    allow_rebase_merge: false
+
+# Repository Management
+repositories:
+  # Repository naming conventions
+  naming:
+    # Prefix for AI-generated repositories
+    prefix: ""
+    suffix: ""
+    
+    # Naming pattern: {prefix}{project_name}{suffix}
+    case: "kebab"  # Options: kebab, snake, camel, pascal
+    
+    # Maximum repository name length
+    max_length: 100
+  
+  # Repository initialization
+  initialization:
+    # Create README.md by default
+    auto_readme: true
+    
+    # Default .gitignore template
+    gitignore_template: "Python"  # Or Node, Java, etc.
+    
+    # Default license
+    license_template: "MIT"
+    
+    # Initial commit message
+    initial_commit: "Initial commit by AI Dev Orchestrator"
+  
+  # Repository settings
+  settings:
+    # Branch protection for main branch
+    protect_main_branch: true
+    
+    # Required status checks
+    required_status_checks:
+      - "continuous-integration"
+      - "code-quality"
+    
+    # Required reviews
+    required_reviews: 1
+    dismiss_stale_reviews: true
+    require_code_owner_reviews: false
+    
+    # Restrictions
+    restrict_pushes: true
+    allowed_push_users: []
+    allowed_push_teams: ["developers"]
+
+# Branch Management
+branches:
+  # Branch naming conventions
+  naming:
+    # Feature branches
+    feature_prefix: "feature/"
+    
+    # Bug fix branches  
+    bugfix_prefix: "bugfix/"
+    
+    # Hotfix branches
+    hotfix_prefix: "hotfix/"
+    
+    # Release branches
+    release_prefix: "release/"
+    
+    # Format: {prefix}{task_id}-{description}
+    include_task_id: true
+    max_description_length: 50
+  
+  # Branch management
+  management:
+    # Auto-delete branches after PR merge
+    auto_delete: true
+    
+    # Maximum branch age before cleanup (days)
+    max_age_days: 30
+    
+    # Branches to never delete
+    protected_branches:
+      - "main"
+      - "develop"
+      - "staging"
+      - "production"
+
+# Pull Request Management
+pull_requests:
+  # PR templates
+  templates:
+    # Default PR template
+    default: |
+      ## Overview
+      Brief description of changes made.
+      
+      ## Changes
+      - List of changes made
+      - Another change
+      
+      ## Testing
+      - [ ] Unit tests added/updated
+      - [ ] Integration tests pass
+      - [ ] Manual testing completed
+      
+      ## Checklist
+      - [ ] Code follows style guidelines
+      - [ ] Self-review completed
+      - [ ] Documentation updated
+      - [ ] No breaking changes (or breaking changes documented)
+      
+      ## Related Issues
+      Closes #{issue_number}
+  
+  # PR settings
+  settings:
+    # Default PR title format
+    title_format: "{task_type}: {task_title}"
+    
+    # Auto-assign reviewers
+    auto_assign_reviewers: true
+    
+    # Default reviewers (usernames)
+    default_reviewers:
+      - "${GITHUB_USERNAME}"
+    
+    # Request reviews from code owners
+    request_review_from_code_owners: true
+    
+    # Default labels for AI-generated PRs
+    default_labels:
+      - "ai-generated"
+      - "automated"
+    
+    # PR merge settings
+    merge_method: "squash"  # Options: merge, squash, rebase
+    delete_branch_on_merge: true
+    
+    # Draft PRs
+    create_as_draft: false
+    mark_ready_when_tests_pass: true
+
+# Issue Management
+issues:
+  # Issue templates
+  templates:
+    bug_report: |
+      ## Bug Description
+      A clear description of the bug.
+      
+      ## Steps to Reproduce
+      1. Step 1
+      2. Step 2
+      3. Step 3
+      
+      ## Expected Behavior
+      What should happen.
+      
+      ## Actual Behavior
+      What actually happens.
+      
+      ## Environment
+      - OS: 
+      - Browser: 
+      - Version:
+    
+    feature_request: |
+      ## Feature Description
+      Description of the requested feature.
+      
+      ## Use Case
+      Why is this feature needed?
+      
+      ## Acceptance Criteria
+      - [ ] Criteria 1
+      - [ ] Criteria 2
+      
+      ## Additional Context
+      Any other context or screenshots.
+  
+  # Issue settings
+  settings:
+    # Auto-assign issues
+    auto_assign: true
+    
+    # Default assignee
+    default_assignee: "${GITHUB_USERNAME}"
+    
+    # Default labels
+    default_labels:
+      - "needs-triage"
+    
+    # Link to external task management
+    link_to_external: true
+    external_link_template: "Jira: {jira_url}/browse/{task_id}"
+
+# Webhook Configuration
+webhooks:
+  # Webhook events to subscribe to
+  events:
+    - "push"
+    - "pull_request"
+    - "issues"
+    - "issue_comment"
+    - "pull_request_review"
+    - "release"
+    - "workflow_run"
+  
+  # Webhook settings
+  settings:
+    # Webhook URL (set by system)
+    url: "${API_BASE_URL}/webhooks/github"
+    
+    # Webhook secret
+    secret: "${GITHUB_WEBHOOK_SECRET}"
+    
+    # Content type
+    content_type: "json"
+    
+    # SSL verification
+    insecure_ssl: false
+    
+    # Active webhook
+    active: true
+
+# File Management
+files:
+  # File operations
+  operations:
+    # Encoding for text files
+    encoding: "utf-8"
+    
+    # Maximum file size for direct API operations
+    max_file_size: "1MB"
+    
+    # Use Git LFS for large files
+    use_git_lfs: true
+    lfs_file_patterns:
+      - "*.zip"
+      - "*.tar.gz"
+      - "*.bin"
+      - "*.exe"
+  
+  # File templates
+  templates:
+    # Default README template
+    readme: |
+      # {project_name}
+      
+      {project_description}
+      
+      ## Installation
+      
+      ```bash
+      # Installation instructions
+      ```
+      
+      ## Usage
+      
+      ```bash
+      # Usage examples
+      ```
+      
+      ## Contributing
+      
+      Please read CONTRIBUTING.md for details on our code of conduct and the process for submitting pull requests.
+      
+      ## License
+      
+      This project is licensed under the MIT License - see the LICENSE file for details.
+    
+    # Default CONTRIBUTING template
+    contributing: |
+      # Contributing
+      
+      ## Development Setup
+      
+      1. Fork the repository
+      2. Create a feature branch
+      3. Make your changes
+      4. Add tests
+      5. Submit a pull request
+      
+      ## Code Style
+      
+      - Follow existing code style
+      - Run linters before submitting
+      - Add tests for new features
+      
+      ## Commit Messages
+      
+      Use conventional commit format:
+      - feat: new feature
+      - fix: bug fix
+      - docs: documentation changes
+      - style: formatting changes
+      - refactor: code refactoring
+      - test: adding tests
+
+# Security Settings
+security:
+  # Security advisories
+  advisories:
+    enabled: true
+    auto_create_issues: true
+    
+  # Dependency scanning
+  dependency_scanning:
+    enabled: true
+    auto_create_prs: false  # Don't auto-create security PRs
+    
+  # Secret scanning
+  secret_scanning:
+    enabled: true
+    push_protection: true
+  
+  # Code scanning
+  code_scanning:
+    enabled: true
+    tools: ["codeql"]
+
+# Workflow Integration (GitHub Actions)
+workflows:
+  # Enable GitHub Actions integration
+  enabled: true
+  
+  # Default workflow templates
+  templates:
+    # CI workflow
+    ci: |
+      name: CI
+      
+      on:
+        push:
+          branches: [ main, develop ]
+        pull_request:
+          branches: [ main, develop ]
+      
+      jobs:
+        test:
+          runs-on: ubuntu-latest
+          
+          steps:
+          - uses: actions/checkout@v3
+          
+          - name: Set up Python
+            uses: actions/setup-python@v3
+            with:
+              python-version: '3.11'
+          
+          - name: Install dependencies
+            run: |
+              python -m pip install --upgrade pip
+              pip install -r requirements.txt
+          
+          - name: Run tests
+            run: |
+              pytest
+    
+    # Deploy workflow
+    deploy: |
+      name: Deploy
+      
+      on:
+        push:
+          branches: [ main ]
+      
+      jobs:
+        deploy:
+          runs-on: ubuntu-latest
+          
+          steps:
+          - uses: actions/checkout@v3
+          
+          - name: Deploy to production
+            run: |
+              echo "Deploy to production"
+  
+  # Workflow settings
+  settings:
+    # Auto-create CI workflow for new repositories
+    auto_create_ci: true
+    
+    # Workflow file location
+    workflow_dir: ".github/workflows"
+    
+    # Required workflows
+    required_workflows:
+      - "ci.yml"
+
+# Integration Settings
+integrations:
+  # External services
+  external_services:
+    # Jira integration
+    jira:
+      enabled: true
+      # Link format for PR descriptions
+      link_format: "Closes {jira_url}/browse/{task_id}"
+    
+    # Slack integration
+    slack:
+      enabled: true
+      notify_on_pr: true
+      notify_on_release: true
+  
+  # Status checks
+  status_checks:
+    # External status checks to wait for
+    external_checks:
+      - "continuous-integration"
+      - "security-scan"
+      - "performance-test"
+    
+    # Timeout for status checks
+    timeout: 1800  # 30 minutes
+
+# Advanced Settings
+advanced:
+  # API settings
+  api:
+    # User agent for API calls
+    user_agent: "AI-Dev-Orchestrator/1.0"
+    
+    # Accept header
+    accept: "application/vnd.github.v3+json"
+    
+    # Enable GraphQL for complex queries
+    use_graphql: true
+    graphql_endpoint: "https://api.github.com/graphql"
+  
+  # Caching
+  cache:
+    enabled: true
+    ttl: 300  # 5 minutes
+    
+    # Cache keys
+    cache_repository_info: true
+    cache_user_info: true
+    cache_organization_info: true
+  
+  # Performance
+  performance:
+    # Parallel operations
+    parallel_requests: 5
+    
+    # Request timeout
+    request_timeout: 45
+    
+    # Connection pool size
+    connection_pool_size: 10
+    
+    # Retry settings
+    retry_statuses: [502, 503, 504]
+    retry_methods: ["GET", "POST", "PUT", "DELETE"]
+
+# Monitoring and Metrics
+monitoring:
+  # Enable metrics collection
+  collect_metrics: true
+  
+  # Metrics to track
+  metrics:
+    - "repositories_created"
+    - "branches_created"
+    - "pull_requests_created"
+    - "issues_created"
+    - "api_calls_made"
+    - "api_errors"
+    - "response_times"
+    - "rate_limit_remaining"
+  
+  # Health check
+  health_check:
+    enabled: true
+    endpoint: "/user"
+    timeout: 10
+    interval: 300  # 5 minutes
+  
+  # Alerting
+  alerts:
+    rate_limit_threshold: 0.1  # Alert when 10% of rate limit remaining
+    error_rate_threshold: 0.05  # Alert when 5% error rate
+
+# Development and Testing
+development:
+  # Mock mode for testing
+  mock_mode: false
+  
+  # Test organization/user
+  test_organization: "test-org"
+  
+  # Dry run mode (log what would be done without doing it)
+  dry_run: false
+  
+  # Debug settings
+  debug:
+    log_api_calls: false
+    log_responses: false
+    log_rate_limits: true

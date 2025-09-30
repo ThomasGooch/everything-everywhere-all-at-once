@@ -1,0 +1,635 @@
+# Standard Development Workflow
+# =============================================================================
+# Complete development task execution from task fetch to PR creation
+# This is the default workflow for most development tasks
+
+name: "Standard Development Workflow"
+description: "Complete development task execution from task fetch to PR creation"
+version: "1.2.0"
+author: "AI Dev Orchestrator Team"
+tags: ["development", "automation", "standard"]
+
+# Workflow metadata
+metadata:
+  category: "development"
+  complexity: "medium" 
+  estimated_duration: "30-60 minutes"
+  success_rate: 0.92
+  cost_estimate: "$3-8"
+
+# Global variables available to all steps
+variables:
+  # Repository and branch settings
+  repository_url: "${task.repository_url}"
+  branch_name: "feature/${task.id.lower()}-${task.title.lower().replace(' ', '-').replace('_', '-')[:30]}"
+  base_branch: "${task.base_branch || project.default_branch || 'main'}"
+  
+  # Pull request settings
+  pr_title: "${task.title}"
+  pr_draft: false
+  
+  # Notification settings
+  team_channel: "${task.team_channel || project.slack_channel || '#development'}"
+  notify_team: true
+  
+  # Agent settings
+  agent_timeout: 1800  # 30 minutes
+  max_retries: 2
+
+# Prerequisites and validation
+prerequisites:
+  - condition: "${task.status == 'todo' or task.status == 'in_progress'}"
+    error_message: "Task must be in 'todo' or 'in_progress' status"
+  
+  - condition: "${task.repository_url}"
+    error_message: "Task must have a repository URL"
+  
+  - condition: "${task.title and len(task.title) >= 5}"
+    error_message: "Task must have a meaningful title (at least 5 characters)"
+
+# Workflow steps
+steps:
+  
+  # ==========================================================================
+  # STEP 1: Fetch and Validate Task Details
+  # ==========================================================================
+  
+  - name: "fetch_task_details"
+    description: "Retrieve comprehensive task information from project management system"
+    plugin: "task_management"
+    action: "get_task"
+    inputs:
+      task_id: "${task_id}"
+      include_comments: true
+      include_attachments: true
+      include_subtasks: true
+    outputs:
+      task: "task_data"
+    on_error: "fail"
+    timeout: 30
+    
+    # Post-step validation
+    validation:
+      - condition: "${task_data.title}"
+        error_message: "Task title is required"
+      - condition: "${task_data.description}"
+        error_message: "Task description is required for implementation"
+  
+  # ==========================================================================
+  # STEP 2: Update Task Status to In Progress
+  # ==========================================================================
+  
+  - name: "update_task_status_in_progress"
+    description: "Mark task as in progress and add AI agent assignment"
+    plugin: "task_management"
+    action: "update_task_status"
+    inputs:
+      task_id: "${task_id}"
+      status: "in_progress"
+      assignee: "${system.ai_agent_email || 'ai-agent@system.local'}"
+      comment: |
+        🤖 **AI Agent Started**
+        
+        Agent Type: Development Agent
+        Workflow: Standard Development Workflow
+        Started: ${timestamp}
+        
+        The AI agent has begun working on this task and will:
+        1. Analyze the codebase structure
+        2. Generate an implementation plan
+        3. Write production-ready code
+        4. Create comprehensive tests
+        5. Submit a pull request for review
+        
+        Estimated completion: 30-60 minutes
+    on_error: "continue"  # Don't fail workflow if status update fails
+  
+  # ==========================================================================
+  # STEP 3: Clone Repository and Create Branch
+  # ==========================================================================
+  
+  - name: "setup_workspace"
+    description: "Clone repository and create feature branch"
+    plugin: "version_control"
+    action: "setup_workspace"
+    inputs:
+      repository_url: "${repository_url}"
+      branch_name: "${branch_name}"
+      base_branch: "${base_branch}"
+      workspace_id: "${agent_id}"
+    outputs:
+      workspace_path: "workspace.path"
+      branch_created: "workspace.branch_created"
+    on_error: "rollback"
+    timeout: 300  # 5 minutes for large repositories
+    
+    rollback:
+      plugin: "version_control"
+      action: "cleanup_workspace"
+      inputs:
+        workspace_id: "${agent_id}"
+  
+  # ==========================================================================
+  # STEP 4: Analyze Existing Codebase
+  # ==========================================================================
+  
+  - name: "analyze_codebase"
+    description: "AI analysis of existing codebase structure and patterns"
+    type: "ai_action"
+    agent: "development"
+    prompt_template: "./prompts/codebase_analysis.txt"
+    inputs:
+      repository_path: "${workspace.path}"
+      task: "${task_data}"
+      tech_stack: "${project.tech_stack}"
+      coding_standards: "${project.coding_standards}"
+    outputs:
+      analysis: "codebase_analysis"
+    max_tokens: 3000
+    temperature: 0.3
+    timeout: 300
+    on_error: "retry"
+    retry_count: 2
+  
+  # ==========================================================================
+  # STEP 5: Generate Implementation Plan
+  # ==========================================================================
+  
+  - name: "generate_implementation_plan"
+    description: "Create detailed implementation plan based on task and codebase analysis"
+    type: "ai_action"
+    agent: "development"
+    prompt_template: "./prompts/implementation_plan.txt"
+    inputs:
+      task: "${task_data}"
+      codebase_analysis: "${codebase_analysis}"
+      project_context: "${project}"
+    outputs:
+      plan: "implementation_plan"
+    max_tokens: 4000
+    temperature: 0.4
+    timeout: 300
+    on_error: "retry"
+    retry_count: 2
+    
+    # Validate implementation plan
+    validation:
+      - condition: "${implementation_plan.files_to_modify}"
+        error_message: "Implementation plan must specify files to modify"
+      - condition: "${implementation_plan.estimated_effort}"
+        error_message: "Implementation plan must include effort estimate"
+  
+  # ==========================================================================
+  # STEP 6: Generate Code Implementation
+  # ==========================================================================
+  
+  - name: "generate_code_implementation"
+    description: "Generate production-ready code implementation"
+    type: "ai_action"
+    agent: "development"
+    prompt_template: "./prompts/code_generation.txt"
+    inputs:
+      task: "${task_data}"
+      plan: "${implementation_plan}"
+      codebase_analysis: "${codebase_analysis}"
+      existing_files: "${workspace.existing_files}"
+    outputs:
+      implementation: "generated_code"
+    max_tokens: 8000
+    temperature: 0.2  # Lower temperature for more consistent code
+    timeout: 600      # 10 minutes for complex implementations
+    on_error: "retry"
+    retry_count: "${max_retries}"
+    
+    # Validate generated code
+    validation:
+      - condition: "${generated_code.files}"
+        error_message: "Code generation must produce file changes"
+      - condition: "${generated_code.tests}"
+        error_message: "Code generation must include tests"
+  
+  # ==========================================================================
+  # STEP 7: Generate Documentation
+  # ==========================================================================
+  
+  - name: "generate_documentation"
+    description: "Generate documentation for the implementation"
+    type: "ai_action"
+    agent: "development"
+    prompt_template: "./prompts/documentation_generation.txt"
+    inputs:
+      task: "${task_data}"
+      implementation: "${generated_code}"
+      project_docs_style: "${project.documentation_style}"
+    outputs:
+      documentation: "generated_docs"
+    max_tokens: 2000
+    temperature: 0.5
+    timeout: 200
+    condition: "${task_data.requires_documentation != false}"  # Generate docs unless explicitly disabled
+    on_error: "continue"  # Don't fail if documentation generation fails
+  
+  # ==========================================================================
+  # STEP 8: Apply Code Changes to Repository  
+  # ==========================================================================
+  
+  - name: "apply_code_changes"
+    description: "Apply generated code changes to the repository"
+    plugin: "version_control"
+    action: "apply_changes"
+    inputs:
+      workspace_path: "${workspace.path}"
+      files: "${generated_code.files}"
+      tests: "${generated_code.tests}"
+      documentation: "${generated_docs.files || []}"
+    outputs:
+      changes_applied: "changes.applied"
+      files_modified: "changes.files_modified"
+      files_created: "changes.files_created"
+    timeout: 300
+    on_error: "rollback"
+    
+    rollback:
+      plugin: "version_control"
+      action: "reset_workspace"
+      inputs:
+        workspace_path: "${workspace.path}"
+        branch: "${branch_name}"
+  
+  # ==========================================================================
+  # STEP 9: Run Tests (if available)
+  # ==========================================================================
+  
+  - name: "run_tests"
+    description: "Execute test suite to validate implementation"
+    plugin: "version_control"
+    action: "run_tests"
+    inputs:
+      workspace_path: "${workspace.path}"
+      test_command: "${project.test_command || 'pytest'}"
+      test_paths: "${generated_code.test_files}"
+    outputs:
+      test_results: "test_results"
+    timeout: 600  # 10 minutes for test execution
+    condition: "${project.auto_run_tests != false and generated_code.tests}"
+    on_error: "continue"  # Don't fail workflow if tests fail, but log the results
+  
+  # ==========================================================================
+  # STEP 10: Commit Changes
+  # ==========================================================================
+  
+  - name: "commit_changes"
+    description: "Commit all changes with descriptive commit message"
+    plugin: "version_control"
+    action: "commit_changes"
+    inputs:
+      workspace_path: "${workspace.path}"
+      branch: "${branch_name}"
+      message: |
+        ${task_data.type || 'feat'}: ${task_data.title}
+        
+        ${task_data.description}
+        
+        Implementation details:
+        ${implementation_plan.summary}
+        
+        Files modified:
+        ${changes.files_modified.join('\n- ')}
+        
+        Files created:
+        ${changes.files_created.join('\n- ')}
+        
+        Tests: ${test_results.status || 'Not run'}
+        
+        Task ID: ${task_id}
+        Generated by: AI Development Agent
+      files: "${changes.files_modified.concat(changes.files_created)}"
+    outputs:
+      commit_hash: "commit.hash"
+      commit_url: "commit.url"
+    timeout: 120
+    on_error: "fail"
+  
+  # ==========================================================================
+  # STEP 11: Push Branch to Remote
+  # ==========================================================================
+  
+  - name: "push_branch"
+    description: "Push feature branch to remote repository"
+    plugin: "version_control"
+    action: "push_branch"
+    inputs:
+      workspace_path: "${workspace.path}"
+      branch: "${branch_name}"
+      remote: "origin"
+      force: false
+    outputs:
+      push_successful: "push.success"
+      remote_url: "push.remote_url"
+    timeout: 300
+    on_error: "fail"
+  
+  # ==========================================================================
+  # STEP 12: Create Pull Request
+  # ==========================================================================
+  
+  - name: "create_pull_request"
+    description: "Create pull request with comprehensive description"
+    plugin: "version_control"
+    action: "create_pull_request"
+    inputs:
+      repository_url: "${repository_url}"
+      source_branch: "${branch_name}"
+      target_branch: "${base_branch}"
+      title: "${pr_title}"
+      description: |
+        ## 🎯 Overview
+        ${task_data.description}
+        
+        ## 📋 Task Details
+        - **Task ID**: ${task_id}
+        - **Type**: ${task_data.type || 'Feature'}
+        - **Priority**: ${task_data.priority || 'Medium'}
+        - **Estimated Effort**: ${implementation_plan.estimated_effort || 'N/A'}
+        
+        ## 🔧 Implementation Summary
+        ${implementation_plan.summary}
+        
+        ### Key Changes:
+        ${implementation_plan.key_changes.map(change => '- ' + change).join('\n')}
+        
+        ## 📁 Files Changed
+        
+        ### Modified Files:
+        ${changes.files_modified.map(file => '- `' + file + '`').join('\n')}
+        
+        ### New Files:
+        ${changes.files_created.map(file => '- `' + file + '`').join('\n')}
+        
+        ## 🧪 Testing
+        ${test_results ? 
+          '✅ **Tests Status**: ' + test_results.status + '\n' +
+          '📊 **Coverage**: ' + (test_results.coverage || 'N/A') + '\n' +
+          '🔍 **Test Results**: ' + test_results.passed + '/' + test_results.total + ' tests passed'
+          : '⏭️ Tests will be run by CI/CD pipeline'
+        }
+        
+        ## 📖 Documentation
+        ${generated_docs ? 
+          '✅ Documentation updated:\n' + generated_docs.files.map(file => '- `' + file + '`').join('\n')
+          : '📝 No documentation changes required'
+        }
+        
+        ## ✅ Acceptance Criteria
+        ${task_data.acceptance_criteria ? 
+          task_data.acceptance_criteria.map(criteria => '- [ ] ' + criteria).join('\n')
+          : '- [ ] Implementation meets task requirements\n- [ ] Tests pass\n- [ ] Code review approved'
+        }
+        
+        ## 🔗 Related Links
+        - **Task**: [${task_id}](${task_data.url})
+        - **Commit**: [${commit.hash.substring(0, 7)}](${commit.url})
+        
+        ---
+        
+        🤖 *Generated by AI Development Agent*  
+        *Workflow: Standard Development Workflow v${version}*
+      draft: "${pr_draft}"
+      labels: ["ai-generated", "automated", "${task_data.type || 'feature'}", "${task_data.priority || 'medium'}"]
+      assignees: ["${task_data.assignee || project.default_reviewers[0]}"]
+      reviewers: "${project.default_reviewers || []}"
+    outputs:
+      pr_url: "pr.url"
+      pr_number: "pr.number"
+      pr_id: "pr.id"
+    timeout: 120
+    on_error: "fail"
+  
+  # ==========================================================================
+  # STEP 13: Update Task with PR Information
+  # ==========================================================================
+  
+  - name: "update_task_with_pr"
+    description: "Update task status and add PR information"
+    plugin: "task_management"
+    action: "update_task_status"
+    inputs:
+      task_id: "${task_id}"
+      status: "in_review"
+      comment: |
+        🚀 **Implementation Completed!**
+        
+        **Pull Request Created**: [PR #${pr.number}](${pr.url})
+        **Branch**: `${branch_name}`
+        **Commit**: [${commit.hash.substring(0, 7)}](${commit.url})
+        
+        ## 📊 Summary
+        - **Files Modified**: ${changes.files_modified.length}
+        - **Files Created**: ${changes.files_created.length}
+        - **Lines Added**: ${generated_code.stats.lines_added || 'N/A'}
+        - **Lines Removed**: ${generated_code.stats.lines_removed || 'N/A'}
+        
+        ## 🧪 Testing
+        ${test_results ? 
+          '✅ Tests: ' + test_results.passed + '/' + test_results.total + ' passed'
+          : '⏭️ Tests will be run by CI/CD'
+        }
+        
+        ## 👀 Ready for Review!
+        The implementation is complete and ready for code review. Please review the pull request and provide feedback.
+        
+        **Estimated Review Time**: ${implementation_plan.review_complexity || 'Medium'} complexity
+      custom_fields:
+        pr_url: "${pr.url}"
+        branch_name: "${branch_name}"
+        commit_hash: "${commit.hash}"
+    on_error: "continue"  # Don't fail workflow if task update fails
+  
+  # ==========================================================================
+  # STEP 14: Notification Steps (Parallel)
+  # ==========================================================================
+  
+  - name: "send_notifications"
+    description: "Send notifications to relevant stakeholders"
+    type: "parallel"
+    condition: "${notify_team}"
+    steps:
+      
+      # Slack notification
+      - name: "notify_slack"
+        description: "Send Slack notification to development team"
+        plugin: "communication"
+        action: "send_message"
+        inputs:
+          channel: "${team_channel}"
+          message: |
+            🚀 **Task Implementation Complete!** 
+            
+            **Task**: ${task_data.title}
+            **PR**: [#${pr.number} - ${pr_title}](${pr.url})
+            **Branch**: `${branch_name}`
+            
+            ${test_results ? 
+              '✅ **Tests**: ' + test_results.passed + '/' + test_results.total + ' passed' 
+              : '⏳ **Tests**: Will be run by CI/CD'
+            }
+            
+            **Files**: ${changes.files_modified.length} modified, ${changes.files_created.length} created
+            
+            **Ready for review!** 👀
+            ${project.default_reviewers ? 
+              'CC: ' + project.default_reviewers.map(r => '<@' + r + '>').join(' ')
+              : ''
+            }
+        on_error: "continue"
+        
+      # Email notification (if configured)
+      - name: "notify_email"
+        description: "Send email notification to stakeholders"
+        plugin: "communication"
+        action: "send_email"
+        inputs:
+          to: "${task_data.watchers || []}"
+          subject: "Task ${task_id} Implementation Complete - ${task_data.title}"
+          body: |
+            Hello,
+            
+            The AI Development Agent has completed implementation of task ${task_id}.
+            
+            Task: ${task_data.title}
+            Pull Request: ${pr.url}
+            
+            Summary:
+            - ${changes.files_modified.length} files modified
+            - ${changes.files_created.length} files created
+            - ${test_results ? test_results.passed + '/' + test_results.total + ' tests passed' : 'Tests pending'}
+            
+            The pull request is ready for review.
+            
+            Best regards,
+            AI Development Agent
+        condition: "${task_data.watchers and task_data.watchers.length > 0}"
+        on_error: "continue"
+  
+  # ==========================================================================
+  # STEP 15: Update Documentation (Optional)
+  # ==========================================================================
+  
+  - name: "update_project_documentation"
+    description: "Update project documentation if configured"
+    plugin: "documentation"
+    action: "update_page"
+    inputs:
+      page_id: "${project.documentation_page_id}"
+      content: "${generated_docs.project_updates}"
+      comment: "Updated by AI agent for task ${task_id}"
+    condition: "${generated_docs and project.documentation_page_id and generated_docs.project_updates}"
+    on_error: "continue"  # Don't fail workflow if documentation update fails
+  
+  # ==========================================================================
+  # STEP 16: Cleanup Workspace
+  # ==========================================================================
+  
+  - name: "cleanup_workspace"
+    description: "Clean up temporary workspace files"
+    plugin: "version_control"
+    action: "cleanup_workspace"
+    inputs:
+      workspace_id: "${agent_id}"
+      preserve_logs: true
+    on_error: "continue"  # Always try to cleanup, but don't fail if it doesn't work
+    
+  # ==========================================================================
+  # STEP 17: Final Status Update
+  # ==========================================================================
+  
+  - name: "workflow_completion"
+    description: "Mark workflow as completed and log final status"
+    type: "system_action"
+    action: "log_workflow_completion"
+    inputs:
+      workflow_id: "${workflow_execution_id}"
+      status: "completed"
+      results:
+        task_id: "${task_id}"
+        pr_url: "${pr.url}"
+        pr_number: "${pr.number}"
+        branch_name: "${branch_name}"
+        commit_hash: "${commit.hash}"
+        files_changed: "${changes.files_modified.length + changes.files_created.length}"
+        test_results: "${test_results}"
+        execution_time: "${execution_time}"
+        estimated_cost: "${estimated_cost}"
+
+# Error Handling Configuration
+error_handling:
+  # Global error settings
+  default_strategy: "fail"  # Options: fail, retry, continue, rollback
+  max_retries: 2
+  retry_delay: 30  # seconds
+  retry_backoff: true
+  
+  # Step-specific error handling
+  step_overrides:
+    fetch_task_details: "fail"           # Must succeed
+    setup_workspace: "rollback"          # Rollback on failure
+    analyze_codebase: "retry"            # Retry AI operations
+    generate_implementation_plan: "retry" # Retry AI operations
+    generate_code_implementation: "retry" # Retry AI operations
+    apply_code_changes: "rollback"       # Rollback file changes
+    commit_changes: "fail"               # Must succeed
+    push_branch: "fail"                  # Must succeed
+    create_pull_request: "fail"          # Must succeed
+    update_task_with_pr: "continue"      # Don't fail workflow
+    send_notifications: "continue"       # Don't fail workflow
+    cleanup_workspace: "continue"        # Always try cleanup
+
+# Success Criteria
+success_criteria:
+  - condition: "${pr.url}"
+    description: "Pull request must be created successfully"
+  
+  - condition: "${commit.hash}"
+    description: "Changes must be committed to repository"
+  
+  - condition: "${push.success}"
+    description: "Branch must be pushed to remote repository"
+
+# Post-Execution Actions
+post_execution:
+  # Always execute these steps regardless of success/failure
+  always:
+    - action: "collect_metrics"
+      inputs:
+        workflow_name: "${name}"
+        execution_time: "${execution_time}"
+        success: "${workflow_success}"
+        cost: "${total_cost}"
+    
+    - action: "cleanup_temporary_files"
+      inputs:
+        agent_id: "${agent_id}"
+  
+  # Execute only on success
+  on_success:
+    - action: "update_success_metrics"
+      inputs:
+        workflow_name: "${name}"
+        
+    - action: "log_success"
+      inputs:
+        message: "Standard development workflow completed successfully for task ${task_id}"
+  
+  # Execute only on failure
+  on_failure:
+    - action: "send_failure_notification"
+      inputs:
+        channel: "${team_channel}"
+        task_id: "${task_id}"
+        error: "${error_message}"
+        
+    - action: "create_failure_issue"
+      inputs:
+        repository: "${repository_url}"
+        title: "AI Agent Failed: ${task_data.title}"
+        assignee: "${project.tech_lead}"

@@ -1,0 +1,407 @@
+# AI Development Automation System - Docker Compose Configuration
+# =============================================================================
+# Complete development environment setup with all required services
+
+version: '3.8'
+
+services:
+  # ==========================================================================
+  # Core Application Services
+  # ==========================================================================
+  
+  # Main FastAPI Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: ai-dev-orchestrator-app
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/ai_dev_orchestrator
+      - REDIS_URL=redis://redis:6379/0
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - JIRA_URL=${JIRA_URL}
+      - JIRA_EMAIL=${JIRA_EMAIL}
+      - JIRA_API_TOKEN=${JIRA_API_TOKEN}
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
+    env_file:
+      - .env
+    volumes:
+      - ./:/app
+      - ./workspaces:/app/workspaces
+      - ./logs:/app/logs
+      - /var/run/docker.sock:/var/run/docker.sock  # For Docker operations
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ai-dev-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Celery Worker for Background Tasks
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: ai-dev-orchestrator-worker
+    command: celery -A workers.celery_app worker --loglevel=info --concurrency=4
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/ai_dev_orchestrator
+      - REDIS_URL=redis://redis:6379/0
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - JIRA_URL=${JIRA_URL}
+      - JIRA_EMAIL=${JIRA_EMAIL}
+      - JIRA_API_TOKEN=${JIRA_API_TOKEN}
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
+    env_file:
+      - .env
+    volumes:
+      - ./:/app
+      - ./workspaces:/app/workspaces
+      - ./logs:/app/logs
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ai-dev-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "celery", "-A", "workers.celery_app", "inspect", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Celery Beat Scheduler
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: ai-dev-orchestrator-scheduler
+    command: celery -A workers.celery_app beat --loglevel=info
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/ai_dev_orchestrator
+      - REDIS_URL=redis://redis:6379/0
+    env_file:
+      - .env
+    volumes:
+      - ./:/app
+      - ./logs:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ai-dev-network
+    restart: unless-stopped
+
+  # ==========================================================================
+  # Database Services
+  # ==========================================================================
+
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: ai-dev-orchestrator-db
+    environment:
+      POSTGRES_DB: ai_dev_orchestrator
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - ai-dev-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ai_dev_orchestrator"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache and Task Queue
+  redis:
+    image: redis:7-alpine
+    container_name: ai-dev-orchestrator-redis
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./config/redis.conf:/usr/local/etc/redis/redis.conf
+    networks:
+      - ai-dev-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ==========================================================================
+  # Monitoring and Observability
+  # ==========================================================================
+
+  # Prometheus Metrics
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ai-dev-orchestrator-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/rules:/etc/prometheus/rules
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    networks:
+      - ai-dev-network
+    restart: unless-stopped
+
+  # Grafana Dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ai-dev-orchestrator-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-worldmap-panel
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+      - ./monitoring/grafana/plugins:/var/lib/grafana/plugins
+    networks:
+      - ai-dev-network
+    restart: unless-stopped
+
+  # Elasticsearch for Logs (Optional)
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.8.0
+    container_name: ai-dev-orchestrator-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - ai-dev-network
+    restart: unless-stopped
+    profiles:
+      - logging
+
+  # Kibana for Log Visualization (Optional)
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.8.0
+    container_name: ai-dev-orchestrator-kibana
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    networks:
+      - ai-dev-network
+    restart: unless-stopped
+    profiles:
+      - logging
+
+  # ==========================================================================
+  # Development and Testing Services
+  # ==========================================================================
+
+  # Adminer Database Management (Development)
+  adminer:
+    image: adminer:latest
+    container_name: ai-dev-orchestrator-adminer
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+      ADMINER_DESIGN: "dracula"
+    networks:
+      - ai-dev-network
+    restart: unless-stopped
+    profiles:
+      - development
+
+  # Redis Commander (Development)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: ai-dev-orchestrator-redis-commander
+    ports:
+      - "8081:8081"
+    environment:
+      REDIS_HOSTS: local:redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    depends_on:
+      - redis
+    networks:
+      - ai-dev-network
+    restart: unless-stopped
+    profiles:
+      - development
+
+  # Mailhog for Email Testing (Development)
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: ai-dev-orchestrator-mailhog
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    networks:
+      - ai-dev-network
+    restart: unless-stopped
+    profiles:
+      - development
+
+  # ==========================================================================
+  # Nginx Reverse Proxy (Production)
+  # ==========================================================================
+
+  nginx:
+    image: nginx:alpine
+    container_name: ai-dev-orchestrator-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/sites-available:/etc/nginx/sites-available
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./nginx/logs:/var/log/nginx
+    depends_on:
+      - app
+    networks:
+      - ai-dev-network
+    restart: unless-stopped
+    profiles:
+      - production
+
+# =============================================================================
+# Networks
+# =============================================================================
+
+networks:
+  ai-dev-network:
+    driver: bridge
+    name: ai-dev-orchestrator
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# =============================================================================
+# Volumes
+# =============================================================================
+
+volumes:
+  # Database volumes
+  postgres_data:
+    name: ai-dev-orchestrator-postgres
+    driver: local
+  
+  redis_data:
+    name: ai-dev-orchestrator-redis
+    driver: local
+  
+  # Monitoring volumes
+  prometheus_data:
+    name: ai-dev-orchestrator-prometheus
+    driver: local
+  
+  grafana_data:
+    name: ai-dev-orchestrator-grafana
+    driver: local
+  
+  # Logging volumes
+  elasticsearch_data:
+    name: ai-dev-orchestrator-elasticsearch
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/elasticsearch
+
+# =============================================================================
+# Development Override Example
+# =============================================================================
+# 
+# Create docker-compose.override.yml for local development:
+#
+# version: '3.8'
+# services:
+#   app:
+#     volumes:
+#       - ./:/app:delegated
+#     environment:
+#       - DEBUG=true
+#       - LOG_LEVEL=DEBUG
+#     command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+#
+#   worker:
+#     volumes:
+#       - ./:/app:delegated
+#     command: watchmedo auto-restart --directory=./workers --pattern=*.py --recursive -- celery -A workers.celery_app worker --loglevel=debug
+
+# =============================================================================
+# Usage Instructions
+# =============================================================================
+#
+# Development Environment:
+# - docker-compose up -d
+# - docker-compose --profile development up -d  (includes dev tools)
+#
+# Production Environment:  
+# - docker-compose --profile production up -d
+#
+# With Logging Stack:
+# - docker-compose --profile logging up -d
+#
+# Full Environment:
+# - docker-compose --profile development --profile logging up -d
+#
+# Useful Commands:
+# - docker-compose logs -f app worker
+# - docker-compose exec app bash
+# - docker-compose exec db psql -U postgres -d ai_dev_orchestrator
+# - docker-compose down -v  (removes volumes)
+# - docker-compose pull && docker-compose up -d --build

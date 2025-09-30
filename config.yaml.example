@@ -1,0 +1,432 @@
+# AI Development Automation System - Main Configuration
+# =============================================================================
+
+# System Information
+system:
+  name: "AI Development Automation System"
+  version: "1.0.0"
+  environment: "${ENVIRONMENT}"
+  workspace_dir: "${WORKSPACE_DIR}"
+  max_concurrent_agents: 5
+  timezone: "UTC"
+
+# API Configuration
+api:
+  host: "${API_HOST}"
+  port: "${API_PORT}"
+  base_url: "${API_BASE_URL}"
+  cors:
+    enabled: true
+    origins: ["http://localhost:3000", "http://localhost:8080"]
+    allow_credentials: true
+  rate_limiting:
+    enabled: true
+    requests_per_minute: 100
+    requests_per_hour: 1000
+
+# AI Provider Configuration
+ai_provider:
+  # Primary AI provider
+  primary:
+    type: "anthropic"
+    model: "${ANTHROPIC_MODEL}"
+    api_key: "${ANTHROPIC_API_KEY}"
+    max_tokens: "${ANTHROPIC_MAX_TOKENS}"
+    temperature: 0.7
+    top_p: 0.9
+  
+  # Fallback AI provider (optional)
+  fallback:
+    type: "openai"
+    model: "${OPENAI_MODEL}"
+    api_key: "${OPENAI_API_KEY}"
+    max_tokens: "${OPENAI_MAX_TOKENS}"
+    temperature: 0.7
+
+  # Cost and usage limits
+  limits:
+    max_cost_per_task: "${MAX_COST_PER_TASK}"
+    max_tokens_per_task: "${MAX_TOKENS_PER_TASK}"
+    monthly_budget: "${MONTHLY_BUDGET}"
+    daily_budget: "${DAILY_BUDGET}"
+
+# Plugin Configuration
+plugins:
+  
+  # Task Management Plugins
+  task_management:
+    provider: "jira"  # Options: jira, linear, asana, monday
+    enabled: true
+    config_file: "./plugins/jira.config.yaml"
+    timeout: 30
+    retry_attempts: 3
+  
+  # Version Control Plugins  
+  version_control:
+    provider: "github"  # Options: github, gitlab, bitbucket
+    enabled: true
+    config_file: "./plugins/github.config.yaml"
+    timeout: 45
+    retry_attempts: 3
+  
+  # Documentation Plugins
+  documentation:
+    provider: "confluence"  # Options: confluence, notion, gitbook
+    enabled: true
+    config_file: "./plugins/confluence.config.yaml"
+    timeout: 30
+    retry_attempts: 2
+  
+  # Communication Plugins
+  communication:
+    provider: "slack"  # Options: slack, discord, teams
+    enabled: true
+    config_file: "./plugins/slack.config.yaml"
+    timeout: 15
+    retry_attempts: 3
+  
+  # Monitoring Plugins (optional)
+  monitoring:
+    provider: "prometheus"
+    enabled: true
+    config_file: "./plugins/prometheus.config.yaml"
+
+# Workflow Configuration
+workflows:
+  default_workflow: "standard_dev_workflow"
+  workflow_dir: "./workflows"
+  timeout: 3600  # 1 hour
+  max_steps: 50
+  
+  # Built-in workflow settings
+  standard_dev_workflow:
+    enabled: true
+    auto_assign: false
+    require_approval: true
+    notification_channels: ["slack"]
+  
+  hotfix_workflow:
+    enabled: true
+    auto_assign: true
+    require_approval: false  # Skip approval for hotfixes
+    priority: "critical"
+    notification_channels: ["slack", "email"]
+  
+  documentation_workflow:
+    enabled: true
+    auto_assign: false
+    require_approval: true
+    notification_channels: ["slack"]
+
+# Agent Configuration
+agents:
+  
+  # Planning Agent
+  planning_agent:
+    enabled: true
+    model: "claude-3-5-sonnet-20241022"
+    max_tokens: 8000
+    timeout: 300
+    cost_limit: 10.00
+    
+  # Development Agent
+  development_agent:
+    enabled: true
+    model: "claude-3-5-sonnet-20241022"
+    max_tokens: 8000
+    timeout: 1800  # 30 minutes
+    cost_limit: 20.00
+    
+  # Code Review Agent (future)
+  code_review_agent:
+    enabled: false
+    model: "claude-3-5-sonnet-20241022"
+    max_tokens: 6000
+    timeout: 600
+    cost_limit: 5.00
+    
+  # Testing Agent (future)
+  testing_agent:
+    enabled: false
+    model: "claude-3-5-sonnet-20241022"
+    max_tokens: 4000
+    timeout: 900
+    cost_limit: 8.00
+
+# Security Configuration
+security:
+  # Authentication
+  jwt:
+    secret_key: "${JWT_SECRET_KEY}"
+    algorithm: "${JWT_ALGORITHM}"
+    expire_minutes: "${JWT_EXPIRE_MINUTES}"
+  
+  # Encryption
+  encryption:
+    key: "${ENCRYPTION_KEY}"
+    algorithm: "AES-256-GCM"
+  
+  # General security settings
+  require_approval_for_merge: true
+  sandbox_agents: true
+  ip_whitelist:
+    enabled: false
+    allowed_ips: ["127.0.0.1", "10.0.0.0/8"]
+  
+  # File security
+  allowed_file_types: [".py", ".js", ".ts", ".java", ".go", ".rs", ".cpp", ".h", ".json", ".yaml", ".yml", ".md", ".txt"]
+  max_file_size: "${MAX_FILE_SIZE}"
+  scan_uploads: true
+
+# Database Configuration
+database:
+  url: "${DATABASE_URL}"
+  pool_size: "${DB_POOL_SIZE}"
+  max_overflow: "${DB_MAX_OVERFLOW}"
+  pool_recycle: "${DB_POOL_RECYCLE}"
+  echo: false  # Set to true for SQL debugging
+
+# Cache Configuration (Redis)
+cache:
+  url: "${REDIS_URL}"
+  password: "${REDIS_PASSWORD}"
+  max_connections: "${REDIS_MAX_CONNECTIONS}"
+  default_ttl: 3600
+  key_prefix: "ai_dev_orchestrator:"
+
+# Task Queue Configuration (Celery)
+task_queue:
+  broker_url: "${REDIS_URL}"
+  result_backend: "${REDIS_URL}"
+  worker_concurrency: 4
+  task_timeout: 3600
+  task_routes:
+    "workers.tasks.execute_agent": {"queue": "agents"}
+    "workers.tasks.process_workflow": {"queue": "workflows"}
+    "workers.tasks.cleanup_workspace": {"queue": "cleanup"}
+
+# Logging Configuration
+logging:
+  level: "${LOG_LEVEL}"
+  format: "${LOG_FORMAT}"  # Options: json, text
+  file: "${LOG_FILE}"
+  max_size: "100MB"
+  backup_count: 5
+  
+  # Logger-specific levels
+  loggers:
+    uvicorn: "WARNING"
+    sqlalchemy: "WARNING"
+    httpx: "WARNING"
+    anthropic: "INFO"
+    
+  # Structured logging fields
+  include_fields:
+    - "timestamp"
+    - "level"
+    - "logger"
+    - "message"
+    - "user_id"
+    - "task_id"
+    - "agent_id"
+    - "request_id"
+
+# Monitoring Configuration
+monitoring:
+  metrics:
+    enabled: true
+    port: 9090
+    include_system_metrics: true
+    include_business_metrics: true
+    
+  health_checks:
+    enabled: true
+    interval: 30  # seconds
+    timeout: 10
+    
+  alerts:
+    enabled: true
+    channels: ["slack"]
+    thresholds:
+      error_rate: 0.05  # 5%
+      response_time: 5000  # 5 seconds
+      cpu_usage: 0.8  # 80%
+      memory_usage: 0.8  # 80%
+
+# Backup Configuration
+backup:
+  enabled: true
+  schedule: "0 2 * * *"  # Daily at 2 AM (cron format)
+  retention_days: 30
+  storage:
+    type: "local"  # Options: local, s3, gcs, azure
+    path: "/app/backups"
+  
+  # What to backup
+  include:
+    - "database"
+    - "workspaces"
+    - "configurations"
+    - "logs"
+
+# Feature Flags
+features:
+  # UI Features
+  web_ui: false
+  mobile_app: false
+  
+  # Analytics
+  usage_analytics: true
+  performance_monitoring: true
+  cost_tracking: true
+  
+  # Advanced Features
+  multi_agent_collaboration: false
+  auto_scaling: false
+  experimental_features: false
+  
+  # Plugin Features
+  plugin_marketplace: true
+  custom_plugins: true
+  plugin_sandboxing: true
+
+# Development Configuration
+development:
+  debug: "${DEBUG}"
+  hot_reload: true
+  profiling: false
+  debug_toolbar: false
+  
+  # Test configuration
+  test_mode: false
+  mock_external_apis: false
+  
+  # Sample data
+  load_sample_data: false
+  sample_project_count: 3
+
+# Notification Configuration
+notifications:
+  default_channels: ["slack"]
+  
+  # Event-based notifications
+  events:
+    project_created:
+      enabled: true
+      channels: ["slack"]
+      template: "project_created"
+      
+    task_completed:
+      enabled: true
+      channels: ["slack"]
+      template: "task_completed"
+      
+    agent_failed:
+      enabled: true
+      channels: ["slack", "email"]
+      template: "agent_failed"
+      urgency: "high"
+      
+    budget_warning:
+      enabled: true
+      channels: ["email"]
+      template: "budget_warning"
+      urgency: "critical"
+      threshold: 0.8  # 80% of budget
+
+# Integration Configuration
+integrations:
+  
+  # Webhook settings
+  webhooks:
+    enabled: true
+    secret: "${WEBHOOK_SECRET}"
+    timeout: 30
+    max_retries: 3
+    
+    # Supported webhook events
+    events:
+      - "task.status_changed"
+      - "agent.execution_completed"
+      - "workflow.finished"
+      - "project.created"
+    
+  # Third-party integrations
+  external_apis:
+    timeout: 30
+    max_retries: 3
+    backoff_factor: 2
+    
+    # Rate limiting for external APIs
+    rate_limits:
+      github: 5000  # requests per hour
+      jira: 3000
+      slack: 1200
+
+# Custom Configuration
+custom:
+  # Company-specific settings
+  company:
+    name: "Your Company"
+    domain: "company.com"
+    timezone: "America/New_York"
+    
+  # Team settings
+  teams:
+    default_reviewers: ["tech-lead@company.com"]
+    required_approvals: 1
+    auto_assign_reviewers: true
+    
+  # Code quality settings
+  quality:
+    min_test_coverage: 0.8
+    max_complexity_score: 10
+    required_linting: true
+    security_scan: true
+    
+  # Deployment settings
+  deployment:
+    auto_deploy_staging: true
+    auto_deploy_production: false
+    staging_branch: "develop"
+    production_branch: "main"
+
+# Environment-specific overrides
+# These settings will override the base configuration based on environment
+environments:
+  
+  development:
+    api:
+      cors:
+        origins: ["*"]  # Allow all origins in development
+    logging:
+      level: "DEBUG"
+    security:
+      sandbox_agents: false  # Disable sandboxing in development
+    features:
+      experimental_features: true
+      
+  staging:
+    ai_provider:
+      limits:
+        monthly_budget: 100.00  # Lower budget for staging
+    security:
+      require_approval_for_merge: false  # Allow auto-merge in staging
+    backup:
+      enabled: false  # No backups in staging
+      
+  production:
+    api:
+      cors:
+        origins: ["https://yourdomain.com"]  # Restrict CORS in production
+    logging:
+      level: "INFO"
+    security:
+      ip_whitelist:
+        enabled: true
+        allowed_ips: ["10.0.0.0/8", "172.16.0.0/12"]
+    features:
+      experimental_features: false
+    backup:
+      enabled: true
+      retention_days: 90  # Longer retention in production
