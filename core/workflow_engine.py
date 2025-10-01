@@ -516,10 +516,13 @@ class WorkflowEngine:
             elif result.lower() in ("false", "0", "no", ""):
                 return False
             else:
-                # Try to evaluate as Python expression for complex conditions
+                # Try to evaluate as safe literal for complex conditions
                 try:
-                    return bool(eval(result))
-                except Exception:
+                    import ast
+
+                    return bool(ast.literal_eval(result))
+                except (ValueError, SyntaxError):
+                    # If not a safe literal, treat as truthy string
                     return bool(result)
 
         except (VariableResolutionError, Exception):
