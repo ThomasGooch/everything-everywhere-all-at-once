@@ -4,21 +4,22 @@ Following the Red-Green-Refactor cycle
 """
 import asyncio
 import os
-import tempfile
 import shutil
-import pytest
+import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch, AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
+
+import pytest
 
 from core.codebase_scanner import (
-    CodebaseScanner,
-    CodebaseAnalysis,
-    TechStack,
     ArchitecturePattern,
+    CodebaseAnalysis,
+    CodebaseScanner,
     CodePattern,
     DependencyInfo,
-    TestFrameworkInfo,
     DocumentationStyle,
+    TechStack,
+    TestFrameworkInfo,
 )
 from core.exceptions import BaseSystemError
 

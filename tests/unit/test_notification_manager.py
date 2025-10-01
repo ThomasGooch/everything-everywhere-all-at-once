@@ -3,22 +3,23 @@ Unit tests for NotificationManager - TDD implementation
 Following the Red-Green-Refactor cycle for multi-channel notification system
 """
 import asyncio
-import pytest
 from datetime import datetime
-from unittest.mock import Mock, AsyncMock, patch
-from typing import Dict, List, Any
+from typing import Any, Dict, List
+from unittest.mock import AsyncMock, Mock, patch
 
+import pytest
+
+from core.exceptions import BaseSystemError
 from core.notification_manager import (
-    NotificationManager,
-    NotificationEvent,
     NotificationChannel,
+    NotificationEvent,
+    NotificationManager,
+    NotificationManagerError,
     NotificationResult,
     NotificationTemplate,
-    NotificationManagerError,
 )
-from core.task_manager import TaskEvent
-from core.exceptions import BaseSystemError
 from core.plugin_registry import PluginRegistry
+from core.task_manager import TaskEvent
 
 
 class TestNotificationManager:

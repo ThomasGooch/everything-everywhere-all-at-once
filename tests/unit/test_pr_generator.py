@@ -2,20 +2,21 @@
 Unit tests for PRGenerator - TDD implementation
 Following the Red-Green-Refactor cycle
 """
-import pytest
 from datetime import datetime
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
 
-from core.pr_generator import (
-    PRGenerator,
-    PRDescription,
-    CommitMessageFormat,
-    ReviewChecklist,
-    ChangelogEntry,
-    PRGenerationError,
-)
-from core.code_modifier import Implementation, FileChange
+import pytest
+
+from core.code_modifier import FileChange, Implementation
 from core.exceptions import BaseSystemError
+from core.pr_generator import (
+    ChangelogEntry,
+    CommitMessageFormat,
+    PRDescription,
+    PRGenerationError,
+    PRGenerator,
+    ReviewChecklist,
+)
 
 
 class TestPRGenerator:

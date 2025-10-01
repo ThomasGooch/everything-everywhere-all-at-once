@@ -6,13 +6,14 @@ import asyncio
 import os
 import shutil
 import tempfile
-import pytest
-from pathlib import Path
-from unittest.mock import Mock, patch, AsyncMock, MagicMock
-
-from core.git_operations import GitOperations, CommitResult, GitError, GitAuthError
-from core.workspace_manager import Workspace, WorkspaceStatus
 from datetime import datetime
+from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
+
+import pytest
+
+from core.git_operations import CommitResult, GitAuthError, GitError, GitOperations
+from core.workspace_manager import Workspace, WorkspaceStatus
 
 
 class TestGitOperations:

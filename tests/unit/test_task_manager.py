@@ -2,21 +2,22 @@
 Unit tests for TaskManager - TDD implementation
 Following the Red-Green-Refactor cycle for task lifecycle management
 """
-import pytest
 from datetime import datetime, timedelta
-from unittest.mock import Mock, patch, AsyncMock, MagicMock
-from typing import Dict, Any
+from typing import Any, Dict
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
-from core.task_manager import (
-    TaskManager,
-    TaskProgress,
-    TaskEvent,
-    TaskStatus,
-    TaskUpdate,
-    TaskManagerError,
-)
+import pytest
+
 from core.exceptions import BaseSystemError
 from core.plugin_registry import PluginRegistry
+from core.task_manager import (
+    TaskEvent,
+    TaskManager,
+    TaskManagerError,
+    TaskProgress,
+    TaskStatus,
+    TaskUpdate,
+)
 
 
 class TestTaskManager:
