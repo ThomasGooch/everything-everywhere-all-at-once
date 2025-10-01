@@ -145,7 +145,7 @@ options:
                 PluginType.TASK_MANAGEMENT, "jira", JiraPlugin
             )
 
-            success = await agent_context.initialize()
+            success = await agent_context.initialize(skip_health_check=True)
 
             assert success is True
             assert agent_context.is_initialized

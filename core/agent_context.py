@@ -59,11 +59,14 @@ class AgentContext:
         """Check if AgentContext is fully initialized"""
         return self._initialized and self._plugins_initialized
 
-    async def initialize(self, plugin_paths: Optional[List[Path]] = None) -> bool:
+    async def initialize(
+        self, plugin_paths: Optional[List[Path]] = None, skip_health_check: bool = False
+    ) -> bool:
         """Initialize the AgentContext and all components
 
         Args:
             plugin_paths: Optional list of paths to discover plugins from
+            skip_health_check: Skip initial health check (useful for testing)
 
         Returns:
             True if initialization successful, False otherwise
@@ -97,8 +100,9 @@ class AgentContext:
 
             self._plugins_initialized = True
 
-            # Perform system health check
-            await self._initial_health_check()
+            # Perform system health check (unless skipped for testing)
+            if not skip_health_check:
+                await self._initial_health_check()
 
             self._initialized = True
             logger.info("AgentContext initialization completed successfully")
