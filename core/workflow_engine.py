@@ -140,6 +140,8 @@ class Workflow:
     name: str
     description: str = ""
     version: str = "1.0.0"
+    author: Optional[str] = None
+    tags: List[str] = field(default_factory=list)
     variables: Dict[str, Any] = field(default_factory=dict)
     prerequisites: List[Dict[str, str]] = field(default_factory=list)
     steps: List[WorkflowStep] = field(default_factory=list)
@@ -203,6 +205,8 @@ class WorkflowEngine:
             name=data["name"],
             description=data.get("description", ""),
             version=data.get("version", "1.0.0"),
+            author=data.get("author"),
+            tags=data.get("tags", []),
             variables=data.get("variables", {}),
             prerequisites=data.get("prerequisites", []),
             steps=steps,
@@ -267,12 +271,18 @@ class WorkflowEngine:
                     errors.append(f"Step '{step.name}' missing required action")
 
             # Validate timeout
-            if step.timeout <= 0:
-                errors.append(f"Step '{step.name}' timeout must be positive")
+            try:
+                if isinstance(step.timeout, (int, float)) and step.timeout <= 0:
+                    errors.append(f"Step '{step.name}' timeout must be positive")
+            except (TypeError, ValueError):
+                errors.append(f"Step '{step.name}' timeout must be a number")
 
             # Validate retry count
-            if step.retry_count < 0:
-                errors.append(f"Step '{step.name}' retry_count cannot be negative")
+            try:
+                if isinstance(step.retry_count, int) and step.retry_count < 0:
+                    errors.append(f"Step '{step.name}' retry_count cannot be negative")
+            except (TypeError, ValueError):
+                errors.append(f"Step '{step.name}' retry_count must be an integer")
 
         # Validate step dependencies and variable references
         self._validate_dependencies(workflow, errors, warnings)
@@ -366,7 +376,7 @@ class WorkflowEngine:
         for step in workflow.steps:
             if step.type == "plugin_action" and step.plugin:
                 try:
-                    plugin = self.plugin_registry.get_plugin_instance(step.plugin)
+                    plugin = self.plugin_registry.get_plugin_instance_by_name(step.plugin)
                     if not plugin:
                         errors.append(
                             f"Plugin '{step.plugin}' not found for step '{step.name}'"
@@ -641,7 +651,7 @@ class WorkflowEngine:
             raise WorkflowExecutionError("No plugin registry available")
 
         # Get the plugin
-        plugin = self.plugin_registry.get_plugin_instance(step.plugin)
+        plugin = self.plugin_registry.get_plugin_instance_by_name(step.plugin)
         if not plugin:
             raise WorkflowExecutionError(f"Plugin '{step.plugin}' not found")
 
