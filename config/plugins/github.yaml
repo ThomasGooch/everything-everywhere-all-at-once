@@ -1,0 +1,26 @@
+# GitHub plugin configuration
+
+type: "version_control"
+provider: "github"
+
+# Connection configuration
+connection:
+  token: "${GITHUB_TOKEN}"
+  api_url: "https://api.github.com"
+
+# Field mappings
+mappings:
+  repository: "full_name"
+  branch: "ref"
+  commit_hash: "sha"
+  commit_message: "commit.message"
+  pull_request: "html_url"
+
+# Plugin-specific options
+options:
+  timeout: 60
+  retry_attempts: 3
+  default_branch: "main"
+  auto_create_branches: true
+  require_pr_reviews: true
+  merge_strategy: "squash"
