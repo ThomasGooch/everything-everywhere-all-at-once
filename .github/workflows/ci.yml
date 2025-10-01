@@ -1,10 +1,8 @@
 name: Quality Gate CI
 
 on:
-  push:
-    branches: [ main, develop, feature/* ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main ]
 
 jobs:
   quality-gate:
@@ -83,12 +81,11 @@ jobs:
         file: ./coverage.xml
         fail_ci_if_error: false
 
-  # Only run on main branch pushes or release tags
+  # Build package for successful PRs to main
   build:
     name: Build Package
     needs: quality-gate
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
     
     steps:
     - uses: actions/checkout@v4
@@ -109,4 +106,4 @@ jobs:
       with:
         name: python-package
         path: dist/
-        retention-days: 30
+        retention-days: 7
