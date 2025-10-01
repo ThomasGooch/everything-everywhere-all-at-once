@@ -459,7 +459,7 @@ class NotificationManager:
     def _format_email_message(self, event: TaskEvent) -> str:
         """Format email message"""
         message = f"Task {event.type.replace('_', ' ').title()}\n"
-        message += f"=" * 40 + "\n\n"
+        message += "=" * 40 + "\n\n"
         message += f"Task ID: {event.task_id}\n"
 
         if event.agent_id:
@@ -551,7 +551,7 @@ class NotificationManager:
                 # For now, use default templates
                 self._template_cache[template_name] = NotificationTemplate(
                     name=template_name,
-                    content=f"{{{{task_id}}}} - {{{{event_type}}}} notification",
+                    content="{{task_id}} - {{event_type}} notification",
                     channel=NotificationChannel.SLACK,
                 )
 

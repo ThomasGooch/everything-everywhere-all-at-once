@@ -184,7 +184,10 @@ class TaskManager:
             )
 
             # Add assignment comment
-            comment = f"Task assigned to AI Agent {agent_id}\n\nStarting automated implementation..."
+            comment = (
+                f"Task assigned to AI Agent {agent_id}\n\n"
+                f"Starting automated implementation..."
+            )
             await task_plugin.add_comment(task_id, comment)
 
             self.logger.info(f"Assigned task {task_id} to agent {agent_id}")
@@ -416,7 +419,8 @@ class TaskManager:
             comment += f"**Current Step:** {progress.current_step}\n"
 
         if progress.estimated_completion:
-            comment += f"**Estimated Completion:** {progress.estimated_completion.strftime('%Y-%m-%d %H:%M')}\n"
+            completion_time = progress.estimated_completion.strftime('%Y-%m-%d %H:%M')
+            comment += f"**Estimated Completion:** {completion_time}\n"
 
         comment += (
             f"\n*Updated by AI Agent at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*"
@@ -473,7 +477,7 @@ class TaskManager:
             failed = test_results.get("failed", 0)
             coverage = test_results.get("coverage", 0)
 
-            comment += f"\n**Test Results:**\n"
+            comment += "\n**Test Results:**\n"
             comment += f"  - Passed: {passed}\n"
             comment += f"  - Failed: {failed}\n"
             if coverage > 0:
@@ -485,7 +489,7 @@ class TaskManager:
 
     def _format_error_comment(self, error_data: Dict[str, Any]) -> str:
         """Format task error comment"""
-        comment = f"❌ **Task Implementation Error**\n\n"
+        comment = "❌ **Task Implementation Error**\n\n"
 
         error_type = error_data.get("error_type", "Unknown Error")
         comment += f"**Error Type:** {error_type}\n"
@@ -499,11 +503,12 @@ class TaskManager:
             )
 
         if error_data.get("recovery_suggestions"):
-            comment += f"\n**Recovery Suggestions:**\n"
+            comment += "\n**Recovery Suggestions:**\n"
             for suggestion in error_data["recovery_suggestions"]:
                 comment += f"  - {suggestion}\n"
 
-        comment += f"\n*Error reported by AI Agent at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*"
+        error_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        comment += f"\n*Error reported by AI Agent at {error_time}*"
 
         return comment
 

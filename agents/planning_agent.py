@@ -164,7 +164,6 @@ class PlanningAgent:
             Description: {{task.description | default('N/A')}}
             Type: {{task.type | default('N/A')}}
             Priority: {{task.priority | default('N/A')}}
-            
             {% if context %}
             Additional Context:
             {% for key, value in context.items() %}
@@ -227,7 +226,7 @@ class PlanningAgent:
                 "success_criteria": ["list", "of", "success", "criteria"]
             }
 
-            Ensure phases are logical, dependencies are correct, and 
+            Ensure phases are logical, dependencies are correct, and
             estimates are realistic.
             """,
         )

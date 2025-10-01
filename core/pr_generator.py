@@ -146,7 +146,10 @@ class PRGenerator:
             implementation.breaking_changes
             or "breaking" in implementation.commit_message.lower()
         ):
-            summary += f"\n\n⚠️ **Breaking Changes:** {implementation.breaking_changes or 'This change includes breaking changes'}"
+            summary += (
+                f"\n\n⚠️ **Breaking Changes:** "
+                f"{implementation.breaking_changes or 'This change includes breaking changes'}"
+            )
 
         # Analyze changes
         files_changed = [file_change.path for file_change in implementation.files]
