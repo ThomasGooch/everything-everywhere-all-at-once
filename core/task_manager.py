@@ -419,7 +419,7 @@ class TaskManager:
             comment += f"**Current Step:** {progress.current_step}\n"
 
         if progress.estimated_completion:
-            completion_time = progress.estimated_completion.strftime('%Y-%m-%d %H:%M')
+            completion_time = progress.estimated_completion.strftime("%Y-%m-%d %H:%M")
             comment += f"**Estimated Completion:** {completion_time}\n"
 
         comment += (
@@ -507,7 +507,7 @@ class TaskManager:
             for suggestion in error_data["recovery_suggestions"]:
                 comment += f"  - {suggestion}\n"
 
-        error_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        error_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         comment += f"\n*Error reported by AI Agent at {error_time}*"
 
         return comment
