@@ -2,13 +2,11 @@
 Task Manager for lifecycle management and status tracking
 Manages task lifecycle, status updates, and coordination with external systems
 """
-import asyncio
 import logging
-import re
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from .exceptions import BaseSystemError
 from .plugin_registry import PluginRegistry

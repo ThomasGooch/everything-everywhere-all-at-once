@@ -5,11 +5,10 @@ Analyzes existing codebase to understand patterns, structure, and technologies
 import asyncio
 import json
 import logging
-import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional
 
 from .exceptions import BaseSystemError
 

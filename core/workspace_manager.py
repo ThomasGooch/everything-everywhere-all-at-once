@@ -2,7 +2,6 @@
 Workspace Management System for AI Development Automation
 Provides isolated workspaces for concurrent agent operations
 """
-import asyncio
 import logging
 import os
 import shutil
@@ -10,7 +9,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Dict, List
 
 from .exceptions import WorkspaceCleanupError, WorkspaceError
 

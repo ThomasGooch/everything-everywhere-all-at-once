@@ -3,7 +3,6 @@ Code Modifier for safe code changes with validation and backup
 Provides secure code modification with proper error handling and rollback capabilities
 """
 import ast
-import asyncio
 import logging
 import os
 import re
@@ -12,7 +11,7 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from .exceptions import BaseSystemError
 

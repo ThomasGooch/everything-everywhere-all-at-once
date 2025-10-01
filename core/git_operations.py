@@ -3,11 +3,9 @@ Git Operations Wrapper for safe Git operations
 Provides secure Git operations with proper error handling and validation
 """
 import ast
-import asyncio
 import logging
 import os
 import shutil
-import subprocess
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -77,7 +75,8 @@ class GitOperations:
             repo.git.checkout(branch_name)
 
             logger.info(
-                f"Successfully setup repository in {workspace.path} on branch {branch_name}"
+                f"Successfully setup repository in {workspace.path} on branch "
+                f"{branch_name}"
             )
             return True
 
@@ -140,10 +139,10 @@ class GitOperations:
             commit = repo.index.commit(message)
             commit_hash = commit.hexsha
 
-            # Get statistics
-            diff_stats = (
-                repo.git.diff("HEAD~1", "--stat") if repo.head.is_valid() else ""
-            )
+            # Get statistics (for potential future use)
+            # diff_stats = (
+            #     repo.git.diff("HEAD~1", "--stat") if repo.head.is_valid() else ""
+            # )
             files_changed = [item.a_path for item in repo.index.diff(None)]
 
             result = CommitResult(
@@ -288,7 +287,7 @@ class GitOperations:
         try:
             # This is a simplified implementation
             # In practice, would need sophisticated conflict resolution
-            repo = git.Repo(workspace.path)
+            # repo = git.Repo(workspace.path)
 
             # For now, just indicate conflicts were handled
             # Real implementation would analyze and resolve conflicts
