@@ -23,9 +23,22 @@ This guide provides step-by-step instructions for using the AI Development Orche
 
 ### Required Configurations
 - **Jira**: API token with task read/write permissions
-- **GitHub**: Personal access token with repository access
+- **GitHub**: Personal access token with repository access OR SSH keys configured
 - **Confluence**: API token with page edit permissions
 - **Slack** (optional): Bot token for notifications
+
+### Local Development Advantages
+If you're running locally and already authenticated:
+
+**GitHub SSH Setup:**
+- ✅ Use your existing SSH keys instead of personal access tokens
+- ✅ Leverage `~/.ssh/config` for repository access
+- ✅ No need to manage GitHub tokens
+
+**Jira Browser Login:**
+- ⚠️ Still requires API token for REST API calls
+- ✅ Easy to generate from your logged-in session
+- ✅ Can reuse existing session cookies for testing
 
 ### Environment Setup
 1. Ensure all plugins are configured in `config/plugins/`
@@ -70,13 +83,26 @@ Acceptance Criteria:
 
 ### Step 2: Initiate the Automated Workflow
 
-**Manual Trigger:**
+**Manual Trigger for Your Setup:**
 ```bash
 # From the project root directory
 python -m workflows.execute \
   --workflow-name "Standard Development Workflow" \
-  --task-id "PROJECT-123" \
-  --repository-url "https://github.com/yourorg/yourrepo"
+  --task-id "CMMAI-48" \
+  --repository-url "git@github.com:yourorg/yourrepo.git"  # SSH format
+```
+
+**Using Your Actual Task:**
+```bash
+# Set your environment variables first
+export JIRA_EMAIL="your.email@covermymeds.com"
+export JIRA_API_TOKEN="your_api_token_here"
+
+# Run the workflow
+python -m workflows.execute \
+  --workflow-name "Standard Development Workflow" \
+  --task-id "CMMAI-48" \
+  --repository-url "git@github.com:covermymeds/your-repo.git"
 ```
 
 **API Trigger:**
@@ -379,9 +405,9 @@ the pull request and provide feedback.
 **Jira Plugin (`config/plugins/jira.yaml`):**
 ```yaml
 connection:
-  url: "https://yourcompany.atlassian.net"
-  email: "${JIRA_EMAIL}"
-  api_token: "${JIRA_API_TOKEN}"
+  url: "https://covermymeds.atlassian.net"  # Your specific instance
+  email: "${JIRA_EMAIL}"                    # Your CoverMyMeds email
+  api_token: "${JIRA_API_TOKEN}"            # Generate from id.atlassian.com
 
 options:
   timeout: 30
@@ -397,11 +423,20 @@ mappings:
   priority: "fields.priority.name"
 ```
 
+**Quick Jira API Token Setup:**
+Since you're already logged into CoverMyMeds Jira:
+1. Visit: https://id.atlassian.com/manage-profile/security/api-tokens
+2. Click "Create API token"
+3. Label it "AI Dev Orchestrator" 
+4. Copy the token and set: `export JIRA_API_TOKEN="your_token_here"`
+
 **GitHub Plugin (`config/plugins/github.yaml`):**
 ```yaml
 connection:
-  token: "${GITHUB_TOKEN}"
+  token: "${GITHUB_TOKEN}"              # Optional if using SSH
   api_url: "https://api.github.com"
+  use_ssh: true                         # Use your existing SSH keys
+  ssh_key_path: "~/.ssh/id_rsa"        # Path to your SSH key (optional)
 
 options:
   timeout: 60
@@ -410,6 +445,18 @@ options:
   require_pr_reviews: true
   merge_strategy: "squash"
 ```
+
+**Local SSH Setup (Recommended):**
+Since you have SSH configured:
+1. No GitHub token needed for repository operations
+2. Uses your existing `~/.ssh/config` and SSH agent
+3. Leverages your current GitHub authentication
+4. Only needs token for GitHub API calls (PR creation, etc.)
+
+**Hybrid Approach:**
+- Repository operations (clone, push, pull) use SSH
+- GitHub API operations (create PR, get repo info) use token
+- Best of both worlds for local development
 
 **Slack Plugin (`config/plugins/slack.yaml`):**
 ```yaml
