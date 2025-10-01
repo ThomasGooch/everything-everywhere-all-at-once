@@ -69,9 +69,7 @@ class CostTracker:
     def get_usage_summary(self) -> Dict[str, Any]:
         """Get summary statistics for usage."""
         total_requests = len(self.usage_history)
-        avg_cost = (
-            self.total_cost / total_requests if total_requests > 0 else 0.0
-        )
+        avg_cost = self.total_cost / total_requests if total_requests > 0 else 0.0
 
         return {
             "total_cost": self.total_cost,
@@ -90,9 +88,7 @@ class CostTracker:
 class PromptTemplate:
     """Template system for AI prompts with Jinja2 integration."""
 
-    def __init__(
-        self, name: str, template: str, system_template: Optional[str] = None
-    ):
+    def __init__(self, name: str, template: str, system_template: Optional[str] = None):
         self.name = name
         self.template = template
         self.system_template = system_template
@@ -174,9 +170,7 @@ class AIProvider(ABC):
         pass
 
     @abstractmethod
-    def get_cost_estimate(
-        self, input_tokens: int, output_tokens: int
-    ) -> float:
+    def get_cost_estimate(self, input_tokens: int, output_tokens: int) -> float:
         """Estimate cost for given token usage."""
         pass
 
@@ -219,8 +213,7 @@ class ClaudeProvider(AIProvider):
         model = self.config.get("model", "claude-3-sonnet-20240229")
         if model not in self.SUPPORTED_MODELS:
             error_msg = (
-                f"Invalid model: {model}. "
-                f"Supported models: {self.SUPPORTED_MODELS}"
+                f"Invalid model: {model}. " f"Supported models: {self.SUPPORTED_MODELS}"
             )
             raise AIProviderError(error_msg)
 
@@ -297,9 +290,7 @@ class ClaudeProvider(AIProvider):
         except Exception:
             return False
 
-    def get_cost_estimate(
-        self, input_tokens: int, output_tokens: int
-    ) -> float:
+    def get_cost_estimate(self, input_tokens: int, output_tokens: int) -> float:
         """Calculate cost estimate for token usage."""
         input_cost = input_tokens * self.cost_per_input_token
         output_cost = output_tokens * self.cost_per_output_token

@@ -113,9 +113,7 @@ class TaskPlan:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "TaskPlan":
         """Create TaskPlan from dictionary."""
-        steps = [
-            PlanStep.from_dict(step_data) for step_data in data.get("steps", [])
-        ]
+        steps = [PlanStep.from_dict(step_data) for step_data in data.get("steps", [])]
 
         return cls(
             task_id=data.get("task_id", ""),
@@ -137,9 +135,7 @@ class AnalysisResult:
     def __post_init__(self):
         """Validate the result after initialization."""
         if self.task_analysis.task_id != self.task_plan.task_id:
-            raise PlanningAgentError(
-                "Task IDs must match between analysis and plan"
-            )
+            raise PlanningAgentError("Task IDs must match between analysis and plan")
 
 
 class PlanningAgent:
