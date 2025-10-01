@@ -56,6 +56,10 @@ venv.bak/
 .nyc_output/
 .jest/
 junit.xml
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
 
 # OS generated files
 *.pid
@@ -71,3 +75,4 @@ plugins/*/dist/
 .agent-state/
 .orchestration-cache/
 workflows/temp/
+
