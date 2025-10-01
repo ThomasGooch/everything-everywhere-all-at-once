@@ -217,9 +217,7 @@ class TestTokenUsage:
     def test_token_usage_creation(self):
         """Test TokenUsage object creation"""
         # RED: This will fail since TokenUsage doesn't exist yet
-        usage = TokenUsage(
-            input_tokens=100, output_tokens=50, total_tokens=150
-        )
+        usage = TokenUsage(input_tokens=100, output_tokens=50, total_tokens=150)
 
         assert usage.input_tokens == 100
         assert usage.output_tokens == 50
@@ -368,9 +366,7 @@ class TestPromptTemplate:
     def test_prompt_template_missing_variable_error(self):
         """Test error handling for missing template variables"""
         # RED: This will fail since error handling doesn't exist yet
-        template = PromptTemplate(
-            name="test", template="Hello, {{missing_var}}!"
-        )
+        template = PromptTemplate(name="test", template="Hello, {{missing_var}}!")
 
         with pytest.raises(AIProviderError) as exc_info:
             template.render({})

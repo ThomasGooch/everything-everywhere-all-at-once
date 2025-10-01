@@ -113,9 +113,7 @@ class TaskPlan:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "TaskPlan":
         """Create TaskPlan from dictionary."""
-        steps = [
-            PlanStep.from_dict(step_data) for step_data in data.get("steps", [])
-        ]
+        steps = [PlanStep.from_dict(step_data) for step_data in data.get("steps", [])]
 
         return cls(
             task_id=data.get("task_id", ""),
@@ -137,9 +135,7 @@ class AnalysisResult:
     def __post_init__(self):
         """Validate the result after initialization."""
         if self.task_analysis.task_id != self.task_plan.task_id:
-            raise PlanningAgentError(
-                "Task IDs must match between analysis and plan"
-            )
+            raise PlanningAgentError("Task IDs must match between analysis and plan")
 
 
 class PlanningAgent:
@@ -168,7 +164,6 @@ class PlanningAgent:
             Description: {{task.description | default('N/A')}}
             Type: {{task.type | default('N/A')}}
             Priority: {{task.priority | default('N/A')}}
-            
             {% if context %}
             Additional Context:
             {% for key, value in context.items() %}
@@ -231,7 +226,7 @@ class PlanningAgent:
                 "success_criteria": ["list", "of", "success", "criteria"]
             }
 
-            Ensure phases are logical, dependencies are correct, and 
+            Ensure phases are logical, dependencies are correct, and
             estimates are realistic.
             """,
         )
