@@ -127,3 +127,10 @@ exclude_lines = [
     "if 0:",
     "if __name__ == .__main__.:"
 ]
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = [
+    "E203",  # whitespace before ':'
+    "W503",  # line break before binary operator
+]

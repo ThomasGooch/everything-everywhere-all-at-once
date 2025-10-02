@@ -2,13 +2,11 @@
 Unit tests for GitOperations - TDD implementation
 Following the Red-Green-Refactor cycle
 """
-import asyncio
-import os
 import shutil
 import tempfile
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 

@@ -1,8 +1,7 @@
 """Unit tests for Claude AI Plugin"""
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-from anthropic.types import Message
+from unittest.mock import MagicMock, patch
 from anthropic.types.message import Usage
 from anthropic.types.text_block import TextBlock
 

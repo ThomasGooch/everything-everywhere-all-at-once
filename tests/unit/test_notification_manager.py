@@ -4,12 +4,10 @@ Following the Red-Green-Refactor cycle for multi-channel notification system
 """
 import asyncio
 from datetime import datetime
-from typing import Any, Dict, List
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from core.exceptions import BaseSystemError
 from core.notification_manager import (
     NotificationChannel,
     NotificationEvent,
@@ -18,7 +16,6 @@ from core.notification_manager import (
     NotificationResult,
     NotificationTemplate,
 )
-from core.plugin_registry import PluginRegistry
 from core.task_manager import TaskEvent
 
 

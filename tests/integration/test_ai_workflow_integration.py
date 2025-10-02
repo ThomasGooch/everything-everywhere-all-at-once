@@ -1,14 +1,10 @@
 """Integration tests for AI-powered workflow execution"""
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-import tempfile
-import os
+from unittest.mock import AsyncMock, MagicMock
 
 from core.workflow_engine import WorkflowEngine
 from core.plugin_registry import PluginRegistry
-from plugins.claude_plugin import ClaudePlugin
-from core.plugin_interface import PluginType
 
 
 @pytest.mark.integration

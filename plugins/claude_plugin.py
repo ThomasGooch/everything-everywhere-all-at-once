@@ -1,10 +1,8 @@
 """Claude AI Plugin for intelligent code generation and analysis"""
 
 import logging
-import os
 from typing import Any, Dict, Optional
 
-import anthropic
 from anthropic import Anthropic
 
 from core.plugin_interface import (

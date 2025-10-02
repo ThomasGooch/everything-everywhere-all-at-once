@@ -636,16 +636,16 @@ class JiraPlugin(TaskManagementPlugin):
             return None
 
     # Enhanced Jira Plugin Methods for Phase 4
-    
+
     async def get_task_with_context(
-        self, 
+        self,
         task_id: str,
         include_subtasks: bool = True,
         include_linked_issues: bool = True,
-        include_comments: bool = True
+        include_comments: bool = True,
     ) -> PluginResult:
         """Get task with full context including subtasks, linked issues, and comments"""
-        
+
         try:
             # Build expand parameter for additional data
             expand_fields = []
@@ -655,50 +655,49 @@ class JiraPlugin(TaskManagementPlugin):
                 expand_fields.append("issuelinks")
             if include_comments:
                 expand_fields.append("comments")
-            
+
             expand_param = ",".join(expand_fields)
-            
+
             # Get task with expanded fields
             url = self._build_api_url(f"issue/{task_id}")
             if expand_param:
                 url += f"?expand={expand_param}"
-            
+
             async with self._session.get(
-                url, 
-                headers=self._get_request_headers()
+                url, headers=self._get_request_headers()
             ) as response:
                 if response.status == HTTP_OK:
                     issue_data = await response.json()
-                    
+
                     # Transform the data with custom field mapping
                     transformed_data = self._transform_task_data(issue_data)
-                    
+
                     return PluginResult(
                         success=True,
                         data=transformed_data,
                         metadata={
                             "includes_subtasks": include_subtasks,
                             "includes_linked_issues": include_linked_issues,
-                            "includes_comments": include_comments
-                        }
+                            "includes_comments": include_comments,
+                        },
                     )
                 else:
                     error_text = await response.text()
                     return PluginResult(
                         success=False,
-                        error=f"Failed to get task context: {response.status} - {error_text}"
+                        error=f"Failed to get task context: {response.status} - {error_text}",
                     )
-                    
+
         except Exception as e:
             logger.error(f"Error getting task context for {task_id}: {e}")
             return PluginResult(success=False, error=str(e))
 
     def _transform_task_data(self, issue_data: Dict[str, Any]) -> Dict[str, Any]:
         """Transform Jira issue data with custom field mapping"""
-        
+
         fields = issue_data.get("fields", {})
         custom_field_mapping = self.config.get("options", {}).get("custom_fields", {})
-        
+
         # Base task data
         transformed = {
             "id": issue_data.get("id"),
@@ -706,17 +705,21 @@ class JiraPlugin(TaskManagementPlugin):
             "summary": fields.get("summary"),
             "description": fields.get("description"),
             "status": fields.get("status", {}).get("name"),
-            "assignee": fields.get("assignee", {}).get("displayName") if fields.get("assignee") else None,
-            "priority": fields.get("priority", {}).get("name") if fields.get("priority") else None,
+            "assignee": fields.get("assignee", {}).get("displayName")
+            if fields.get("assignee")
+            else None,
+            "priority": fields.get("priority", {}).get("name")
+            if fields.get("priority")
+            else None,
             "created": fields.get("created"),
-            "updated": fields.get("updated")
+            "updated": fields.get("updated"),
         }
-        
+
         # Map custom fields
         for friendly_name, field_id in custom_field_mapping.items():
             if field_id in fields:
                 transformed[friendly_name] = fields[field_id]
-        
+
         # Add subtasks if present
         if "subtasks" in fields and fields["subtasks"]:
             transformed["subtasks"] = [
@@ -724,30 +727,38 @@ class JiraPlugin(TaskManagementPlugin):
                     "id": subtask.get("id"),
                     "key": subtask.get("key"),
                     "summary": subtask.get("fields", {}).get("summary"),
-                    "status": subtask.get("fields", {}).get("status", {}).get("name")
+                    "status": subtask.get("fields", {}).get("status", {}).get("name"),
                 }
                 for subtask in fields["subtasks"]
             ]
-        
+
         # Add linked issues if present
         if "issuelinks" in fields and fields["issuelinks"]:
             transformed["linked_issues"] = []
             for link in fields["issuelinks"]:
                 if "inwardIssue" in link:
                     issue = link["inwardIssue"]
-                    transformed["linked_issues"].append({
-                        "key": issue.get("key"),
-                        "summary": issue.get("fields", {}).get("summary"),
-                        "relationship": link.get("type", {}).get("inward", "linked")
-                    })
+                    transformed["linked_issues"].append(
+                        {
+                            "key": issue.get("key"),
+                            "summary": issue.get("fields", {}).get("summary"),
+                            "relationship": link.get("type", {}).get(
+                                "inward", "linked"
+                            ),
+                        }
+                    )
                 elif "outwardIssue" in link:
                     issue = link["outwardIssue"]
-                    transformed["linked_issues"].append({
-                        "key": issue.get("key"),
-                        "summary": issue.get("fields", {}).get("summary"),
-                        "relationship": link.get("type", {}).get("outward", "linked")
-                    })
-        
+                    transformed["linked_issues"].append(
+                        {
+                            "key": issue.get("key"),
+                            "summary": issue.get("fields", {}).get("summary"),
+                            "relationship": link.get("type", {}).get(
+                                "outward", "linked"
+                            ),
+                        }
+                    )
+
         # Add comments if present
         if "comments" in issue_data.get("fields", {}):
             comments_data = issue_data["fields"]["comments"]
@@ -757,35 +768,35 @@ class JiraPlugin(TaskManagementPlugin):
                         "id": comment.get("id"),
                         "author": comment.get("author", {}).get("displayName"),
                         "body": comment.get("body"),
-                        "created": comment.get("created")
+                        "created": comment.get("created"),
                     }
                     for comment in comments_data["comments"]
                 ]
-        
+
         return transformed
 
     async def add_progress_comment(
         self,
         task_id: str,
         progress_data: Dict[str, Any],
-        template: str = "ai_agent_progress"
+        template: str = "ai_agent_progress",
     ) -> PluginResult:
         """Add a progress comment using a template"""
-        
+
         try:
             # Generate comment body using template
             comment_body = self._render_comment_template(template, progress_data)
-            
+
             # Use the existing add_comment method
             return await self.add_comment(task_id, comment_body)
-            
+
         except Exception as e:
             logger.error(f"Error adding progress comment to {task_id}: {e}")
             return PluginResult(success=False, error=str(e))
 
     def _render_comment_template(self, template_type: str, data: Dict[str, Any]) -> str:
         """Render comment template with data"""
-        
+
         if template_type == "ai_agent_progress":
             return self._render_ai_progress_template(data)
         elif template_type == "ai_agent_start":
@@ -797,7 +808,7 @@ class JiraPlugin(TaskManagementPlugin):
 
     def _render_ai_progress_template(self, data: Dict[str, Any]) -> str:
         """Render AI agent progress template"""
-        
+
         template = """🤖 **AI Agent Progress Update**
 
 **Current Status:** {current_step}
@@ -817,12 +828,14 @@ class JiraPlugin(TaskManagementPlugin):
 ---
 *Automated update from AI Development Agent*"""
 
-        completed_steps_text = "\n".join([
-            f"• {step} ✅" for step in data.get("steps_completed", [])
-        ])
-        
+        completed_steps_text = "\n".join(
+            [f"• {step} ✅" for step in data.get("steps_completed", [])]
+        )
+
         files_changed = data.get("files_changed", [])
-        file_list = "\n".join([f"  - {file}" for file in files_changed[:5]])  # Limit to 5 files
+        file_list = "\n".join(
+            [f"  - {file}" for file in files_changed[:5]]
+        )  # Limit to 5 files
         if len(files_changed) > 5:
             file_list += f"\n  - ... and {len(files_changed) - 5} more files"
 
@@ -832,12 +845,12 @@ class JiraPlugin(TaskManagementPlugin):
             estimated_completion=data.get("estimated_completion", "Unknown"),
             ai_cost=data.get("ai_cost", 0.0),
             file_count=len(files_changed),
-            file_list=file_list
+            file_list=file_list,
         )
 
     def _render_ai_start_template(self, data: Dict[str, Any]) -> str:
         """Render AI agent start template"""
-        
+
         template = """🤖 **AI Agent Started**
 
 **Agent:** {agent_name}
@@ -860,12 +873,12 @@ The AI agent has begun working on this task and will:
             agent_name=data.get("agent_name", "Development Agent"),
             workflow_name=data.get("workflow_name", "Standard Development"),
             estimated_duration=data.get("estimated_duration", "30-60 minutes"),
-            timestamp=data.get("timestamp", "now")
+            timestamp=data.get("timestamp", "now"),
         )
 
     def _render_ai_completion_template(self, data: Dict[str, Any]) -> str:
         """Render AI agent completion template"""
-        
+
         template = """🚀 **AI Implementation Completed!**
 
 **Pull Request:** [{pr_number}]({pr_url})
@@ -893,20 +906,22 @@ The AI agent has begun working on this task and will:
             files_modified=data.get("files_modified", 0),
             files_created=data.get("files_created", 0),
             test_status=data.get("test_status", "Pending"),
-            review_notes=data.get("review_notes", "Please review the implementation and provide feedback.")
+            review_notes=data.get(
+                "review_notes", "Please review the implementation and provide feedback."
+            ),
         )
 
     async def update_custom_fields(
-        self, 
-        task_id: str,
-        custom_fields: Dict[str, Any]
+        self, task_id: str, custom_fields: Dict[str, Any]
     ) -> PluginResult:
         """Update custom fields using friendly names"""
-        
+
         try:
             # Map friendly names to actual field IDs
-            custom_field_mapping = self.config.get("options", {}).get("custom_fields", {})
-            
+            custom_field_mapping = self.config.get("options", {}).get(
+                "custom_fields", {}
+            )
+
             fields_data = {}
             for friendly_name, value in custom_fields.items():
                 if friendly_name in custom_field_mapping:
@@ -914,172 +929,153 @@ The AI agent has begun working on this task and will:
                     fields_data[field_id] = value
                 else:
                     logger.warning(f"Unknown custom field: {friendly_name}")
-            
+
             if not fields_data:
                 return PluginResult(
-                    success=False,
-                    error="No valid custom fields to update"
+                    success=False, error="No valid custom fields to update"
                 )
-            
+
             # Make API call to update fields
             url = self._build_api_url(f"issue/{task_id}")
             data = {"fields": fields_data}
-            
+
             async with self._session.put(
-                url,
-                headers=self._get_request_headers(),
-                data=json.dumps(data)
+                url, headers=self._get_request_headers(), data=json.dumps(data)
             ) as response:
                 if response.status in [HTTP_NO_CONTENT, HTTP_OK]:
                     return PluginResult(
                         success=True,
-                        data={"updated_fields": list(custom_fields.keys())}
+                        data={"updated_fields": list(custom_fields.keys())},
                     )
                 else:
                     error_text = await response.text()
                     return PluginResult(
                         success=False,
-                        error=f"Failed to update custom fields: {response.status} - {error_text}"
+                        error=f"Failed to update custom fields: {response.status} - {error_text}",
                     )
-                    
+
         except Exception as e:
             logger.error(f"Error updating custom fields for {task_id}: {e}")
             return PluginResult(success=False, error=str(e))
 
     async def get_available_transitions(self, task_id: str) -> PluginResult:
         """Get available status transitions for a task"""
-        
+
         try:
             url = self._build_api_url(f"issue/{task_id}/transitions")
-            
+
             async with self._session.get(
-                url,
-                headers=self._get_request_headers()
+                url, headers=self._get_request_headers()
             ) as response:
                 if response.status == HTTP_OK:
                     transitions_data = await response.json()
-                    
+
                     transitions = []
                     for transition in transitions_data.get("transitions", []):
-                        transitions.append({
-                            "id": transition.get("id"),
-                            "name": transition.get("name"),
-                            "to_status": transition.get("to", {}).get("name")
-                        })
-                    
-                    return PluginResult(
-                        success=True,
-                        data={"transitions": transitions}
-                    )
+                        transitions.append(
+                            {
+                                "id": transition.get("id"),
+                                "name": transition.get("name"),
+                                "to_status": transition.get("to", {}).get("name"),
+                            }
+                        )
+
+                    return PluginResult(success=True, data={"transitions": transitions})
                 else:
                     error_text = await response.text()
                     return PluginResult(
                         success=False,
-                        error=f"Failed to get transitions: {response.status} - {error_text}"
+                        error=f"Failed to get transitions: {response.status} - {error_text}",
                     )
-                    
+
         except Exception as e:
             logger.error(f"Error getting transitions for {task_id}: {e}")
             return PluginResult(success=False, error=str(e))
 
     async def transition_task_with_validation(
-        self,
-        task_id: str,
-        status: str,
-        validate_transition: bool = True
+        self, task_id: str, status: str, validate_transition: bool = True
     ) -> PluginResult:
         """Transition task with optional validation of allowed transitions"""
-        
+
         try:
             if validate_transition:
                 # First check if transition is allowed
                 transitions_result = await self.get_available_transitions(task_id)
                 if not transitions_result.success:
                     return transitions_result
-                
+
                 available_transitions = transitions_result.data["transitions"]
                 valid_transition = next(
-                    (t for t in available_transitions if t["to_status"] == status),
-                    None
+                    (t for t in available_transitions if t["to_status"] == status), None
                 )
-                
+
                 if not valid_transition:
                     return PluginResult(
                         success=False,
-                        error=f"Invalid transition to '{status}'. Available: {[t['to_status'] for t in available_transitions]}"
+                        error=f"Invalid transition to '{status}'. Available: {[t['to_status'] for t in available_transitions]}",
                     )
-                
+
                 transition_id = valid_transition["id"]
             else:
                 # Use the basic update_task_status method
                 return await self.update_task_status(task_id, status)
-            
+
             # Perform the transition
             url = self._build_api_url(f"issue/{task_id}/transitions")
-            data = {
-                "transition": {"id": transition_id}
-            }
-            
+            data = {"transition": {"id": transition_id}}
+
             async with self._session.post(
-                url,
-                headers=self._get_request_headers(),
-                data=json.dumps(data)
+                url, headers=self._get_request_headers(), data=json.dumps(data)
             ) as response:
                 if response.status == HTTP_NO_CONTENT:
-                    return PluginResult(
-                        success=True,
-                        data={"transitioned_to": status}
-                    )
+                    return PluginResult(success=True, data={"transitioned_to": status})
                 else:
                     error_text = await response.text()
                     return PluginResult(
                         success=False,
-                        error=f"Failed to transition task: {response.status} - {error_text}"
+                        error=f"Failed to transition task: {response.status} - {error_text}",
                     )
-                    
+
         except Exception as e:
             logger.error(f"Error transitioning {task_id} to {status}: {e}")
             return PluginResult(success=False, error=str(e))
 
     async def create_subtask(
-        self,
-        project_key: str,
-        subtask_data: Dict[str, Any]
+        self, project_key: str, subtask_data: Dict[str, Any]
     ) -> PluginResult:
         """Create a subtask linked to parent task"""
-        
+
         try:
             # Build subtask creation data
             parent_key = subtask_data.get("parent_key")
             if not parent_key:
                 return PluginResult(
-                    success=False,
-                    error="parent_key is required for subtask creation"
+                    success=False, error="parent_key is required for subtask creation"
                 )
-            
+
             fields = {
                 "project": {"key": project_key},
                 "parent": {"key": parent_key},
                 "summary": subtask_data.get("summary"),
                 "description": subtask_data.get("description", ""),
-                "issuetype": {"name": "Subtask"}  # Use Subtask issue type
+                "issuetype": {"name": "Subtask"},  # Use Subtask issue type
             }
-            
+
             # Add any custom fields
             if "custom_fields" in subtask_data:
-                custom_field_mapping = self.config.get("options", {}).get("custom_fields", {})
+                custom_field_mapping = self.config.get("options", {}).get(
+                    "custom_fields", {}
+                )
                 for friendly_name, value in subtask_data["custom_fields"].items():
                     if friendly_name in custom_field_mapping:
                         field_id = custom_field_mapping[friendly_name]
                         fields[field_id] = value
-            
+
             data = {"fields": fields}
-            
+
             url = self._build_api_url("issue")
             async with self._session.post(
-                url,
-                headers=self._get_request_headers(),
-                data=json.dumps(data)
+                url, headers=self._get_request_headers(), data=json.dumps(data)
             ) as response:
                 if response.status == HTTP_CREATED:
                     result_data = await response.json()
@@ -1088,113 +1084,108 @@ The AI agent has begun working on this task and will:
                         data={
                             "key": result_data.get("key"),
                             "id": result_data.get("id"),
-                            "parent_key": parent_key
-                        }
+                            "parent_key": parent_key,
+                        },
                     )
                 else:
                     error_text = await response.text()
                     return PluginResult(
                         success=False,
-                        error=f"Failed to create subtask: {response.status} - {error_text}"
+                        error=f"Failed to create subtask: {response.status} - {error_text}",
                     )
-                    
+
         except Exception as e:
             logger.error(f"Error creating subtask: {e}")
             return PluginResult(success=False, error=str(e))
 
     async def link_to_epic(self, task_id: str, epic_key: str) -> PluginResult:
         """Link a task to an epic"""
-        
+
         try:
             # Get epic link custom field ID from configuration
-            custom_field_mapping = self.config.get("options", {}).get("custom_fields", {})
+            custom_field_mapping = self.config.get("options", {}).get(
+                "custom_fields", {}
+            )
             epic_link_field = custom_field_mapping.get("epic_link")
-            
+
             if not epic_link_field:
                 return PluginResult(
-                    success=False,
-                    error="Epic link custom field not configured"
+                    success=False, error="Epic link custom field not configured"
                 )
-            
+
             # Update the epic link field
             fields = {epic_link_field: epic_key}
             return await self.update_custom_fields(task_id, {"epic_link": epic_key})
-            
+
         except Exception as e:
             logger.error(f"Error linking {task_id} to epic {epic_key}: {e}")
             return PluginResult(success=False, error=str(e))
 
     async def add_templated_comment(
-        self,
-        task_id: str,
-        template_type: str,
-        template_data: Dict[str, Any]
+        self, task_id: str, template_type: str, template_data: Dict[str, Any]
     ) -> PluginResult:
         """Add a comment using a specific template"""
-        
+
         try:
             comment_body = self._render_comment_template(template_type, template_data)
             return await self.add_comment(task_id, comment_body)
-            
+
         except Exception as e:
             logger.error(f"Error adding templated comment to {task_id}: {e}")
             return PluginResult(success=False, error=str(e))
 
-    async def batch_update_status(self, task_updates: List[Dict[str, str]]) -> PluginResult:
+    async def batch_update_status(
+        self, task_updates: List[Dict[str, str]]
+    ) -> PluginResult:
         """Update status for multiple tasks in batch"""
-        
+
         try:
-            results = {
-                "updated": [],
-                "failed": []
-            }
-            
+            results = {"updated": [], "failed": []}
+
             for update in task_updates:
                 task_id = update.get("task_id")
                 status = update.get("status")
-                
+
                 if not task_id or not status:
-                    results["failed"].append({
-                        "task_id": task_id,
-                        "error": "Missing task_id or status"
-                    })
+                    results["failed"].append(
+                        {"task_id": task_id, "error": "Missing task_id or status"}
+                    )
                     continue
-                
+
                 result = await self.update_task_status(task_id, status)
                 if result.success:
                     results["updated"].append(task_id)
                 else:
-                    results["failed"].append({
-                        "task_id": task_id,
-                        "error": result.error
-                    })
-            
+                    results["failed"].append(
+                        {"task_id": task_id, "error": result.error}
+                    )
+
             return PluginResult(
                 success=True,
                 data={
                     "updated_count": len(results["updated"]),
                     "failed_count": len(results["failed"]),
-                    "details": results
-                }
+                    "details": results,
+                },
             )
-            
+
         except Exception as e:
             logger.error(f"Error in batch status update: {e}")
             return PluginResult(success=False, error=str(e))
 
     async def search_tasks(self, search_criteria: Dict[str, Any]) -> PluginResult:
         """Search tasks using JQL with advanced criteria"""
-        
+
         try:
             # Build JQL query from search criteria
             jql_parts = []
-            
+
             if "project" in search_criteria:
                 jql_parts.append(f"project = {search_criteria['project']}")
-            
+
             if "assignee" in search_criteria:
                 jql_parts.append(f"assignee = {search_criteria['assignee']}")
-            
+
             if "status" in search_criteria:
                 statuses = search_criteria["status"]
                 if isinstance(statuses, list):
@@ -1202,7 +1193,7 @@ The AI agent has begun working on this task and will:
                     jql_parts.append(f"status IN ({status_list})")
                 else:
                     jql_parts.append(f'status = "{statuses}"')
-            
+
             if "labels" in search_criteria:
                 labels = search_criteria["labels"]
                 if isinstance(labels, list):
@@ -1210,54 +1201,55 @@ The AI agent has begun working on this task and will:
                         jql_parts.append(f'labels = "{label}"')
                 else:
                     jql_parts.append(f'labels = "{labels}"')
-            
+
             # Handle custom fields
             if "custom_fields" in search_criteria:
-                custom_field_mapping = self.config.get("options", {}).get("custom_fields", {})
+                custom_field_mapping = self.config.get("options", {}).get(
+                    "custom_fields", {}
+                )
                 for friendly_name, value in search_criteria["custom_fields"].items():
                     if friendly_name in custom_field_mapping:
                         field_id = custom_field_mapping[friendly_name]
                         jql_parts.append(f'{field_id} = "{value}"')
-            
+
             jql = " AND ".join(jql_parts)
-            
+
             # Make search API call
             url = self._build_api_url("search")
             params = {
                 "jql": jql,
                 "maxResults": search_criteria.get("max_results", 50),
-                "startAt": search_criteria.get("start_at", 0)
+                "startAt": search_criteria.get("start_at", 0),
             }
-            
+
             query_string = "&".join([f"{k}={v}" for k, v in params.items()])
             full_url = f"{url}?{query_string}"
-            
+
             async with self._session.get(
-                full_url,
-                headers=self._get_request_headers()
+                full_url, headers=self._get_request_headers()
             ) as response:
                 if response.status == HTTP_OK:
                     search_results = await response.json()
-                    
+
                     tasks = []
                     for issue in search_results.get("issues", []):
                         tasks.append(self._transform_task_data(issue))
-                    
+
                     return PluginResult(
                         success=True,
                         data={
                             "tasks": tasks,
                             "total_count": search_results.get("total", 0),
-                            "jql_used": jql
-                        }
+                            "jql_used": jql,
+                        },
                     )
                 else:
                     error_text = await response.text()
                     return PluginResult(
                         success=False,
-                        error=f"Search failed: {response.status} - {error_text}"
+                        error=f"Search failed: {response.status} - {error_text}",
                     )
-                    
+
         except Exception as e:
             logger.error(f"Error searching tasks: {e}")
             return PluginResult(success=False, error=str(e))
