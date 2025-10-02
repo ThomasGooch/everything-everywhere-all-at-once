@@ -560,7 +560,7 @@ class WorkflowEngine:
 
                 # Extract cost from result if available
                 cost = result.get("cost", 0.0) if isinstance(result, dict) else 0.0
-                
+
                 return StepResult(
                     step_name=step.name,
                     success=True,
@@ -800,15 +800,23 @@ class WorkflowEngine:
         else:
             # Generic AI prompt
             task = resolved_inputs.get("task", {})
-            
+
             # Handle case where task might be a string instead of dict
             if isinstance(task, str):
                 task_title = task
                 task_description = task
             else:
-                task_title = task.get('title', 'No title provided') if isinstance(task, dict) else str(task)
-                task_description = task.get('description', 'No description provided') if isinstance(task, dict) else str(task)
-            
+                task_title = (
+                    task.get("title", "No title provided")
+                    if isinstance(task, dict)
+                    else str(task)
+                )
+                task_description = (
+                    task.get("description", "No description provided")
+                    if isinstance(task, dict)
+                    else str(task)
+                )
+
             prompt_parts = [
                 f"Task: {task_title}",
                 f"Description: {task_description}",
@@ -827,8 +835,14 @@ class WorkflowEngine:
             task_title = task
             task_description = task
         else:
-            task_title = task.get('title', 'No title') if isinstance(task, dict) else str(task)
-            task_description = task.get('description', 'No description') if isinstance(task, dict) else str(task)
+            task_title = (
+                task.get("title", "No title") if isinstance(task, dict) else str(task)
+            )
+            task_description = (
+                task.get("description", "No description")
+                if isinstance(task, dict)
+                else str(task)
+            )
 
         return f"""Analyze the codebase for the following development task:
 
@@ -856,12 +870,18 @@ Format your response as a structured analysis that can guide implementation plan
             task_title = task
             task_description = task
         else:
-            task_title = task.get('title', 'No title') if isinstance(task, dict) else str(task)
-            task_description = task.get('description', 'No description') if isinstance(task, dict) else str(task)
-            
+            task_title = (
+                task.get("title", "No title") if isinstance(task, dict) else str(task)
+            )
+            task_description = (
+                task.get("description", "No description")
+                if isinstance(task, dict)
+                else str(task)
+            )
+
         analysis_text = (
-            codebase_analysis.get('generated_text', 'No analysis available') 
-            if isinstance(codebase_analysis, dict) 
+            codebase_analysis.get("generated_text", "No analysis available")
+            if isinstance(codebase_analysis, dict)
             else str(codebase_analysis)
         )
 
@@ -895,18 +915,24 @@ Format the response as a structured plan that can guide code generation."""
             task_title = task
             task_description = task
         else:
-            task_title = task.get('title', 'No title') if isinstance(task, dict) else str(task)
-            task_description = task.get('description', 'No description') if isinstance(task, dict) else str(task)
-            
+            task_title = (
+                task.get("title", "No title") if isinstance(task, dict) else str(task)
+            )
+            task_description = (
+                task.get("description", "No description")
+                if isinstance(task, dict)
+                else str(task)
+            )
+
         plan_text = (
-            plan.get('generated_text', 'No plan available') 
-            if isinstance(plan, dict) 
+            plan.get("generated_text", "No plan available")
+            if isinstance(plan, dict)
             else str(plan)
         )
-        
+
         analysis_text = (
-            codebase_analysis.get('generated_text', 'No context available') 
-            if isinstance(codebase_analysis, dict) 
+            codebase_analysis.get("generated_text", "No context available")
+            if isinstance(codebase_analysis, dict)
             else str(codebase_analysis)
         )
 
@@ -948,12 +974,18 @@ Format your response with clear file separations and explanations."""
             task_title = task
             task_description = task
         else:
-            task_title = task.get('title', 'No title') if isinstance(task, dict) else str(task)
-            task_description = task.get('description', 'No description') if isinstance(task, dict) else str(task)
-            
+            task_title = (
+                task.get("title", "No title") if isinstance(task, dict) else str(task)
+            )
+            task_description = (
+                task.get("description", "No description")
+                if isinstance(task, dict)
+                else str(task)
+            )
+
         implementation_text = (
-            implementation.get('generated_text', 'No implementation details available') 
-            if isinstance(implementation, dict) 
+            implementation.get("generated_text", "No implementation details available")
+            if isinstance(implementation, dict)
             else str(implementation)
         )
 
@@ -1029,10 +1061,14 @@ Format as clear, well-structured documentation suitable for developers."""
                         resolved_inputs[key] = context[var_name]
                     else:
                         # Fallback to variable resolver if context key doesn't exist
-                        resolved_inputs[key] = self.variable_resolver.resolve(value, context)
+                        resolved_inputs[key] = self.variable_resolver.resolve(
+                            value, context
+                        )
                 else:
                     # This is a template string that needs resolution
-                    resolved_inputs[key] = self.variable_resolver.resolve(value, context)
+                    resolved_inputs[key] = self.variable_resolver.resolve(
+                        value, context
+                    )
 
             elif isinstance(value, dict):
                 # Recursively resolve dictionary values
