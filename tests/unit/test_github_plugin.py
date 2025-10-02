@@ -1,6 +1,5 @@
 """Unit tests for GitHub plugin - TDD Implementation"""
 
-import asyncio
 import shutil
 import tempfile
 from pathlib import Path
@@ -8,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 
-from core.plugin_interface import PluginResult, PluginStatus, PluginType
+from core.plugin_interface import PluginStatus, PluginType
 from plugins.github_plugin import GitHubPlugin
 
 

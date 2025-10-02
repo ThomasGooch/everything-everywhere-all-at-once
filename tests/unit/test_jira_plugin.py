@@ -1,13 +1,12 @@
 """Unit tests for Jira plugin - TDD Implementation"""
 
 import asyncio
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import aiohttp
 import pytest
-from aiohttp import ClientResponse, ClientSession
 
-from core.plugin_interface import PluginResult, PluginStatus, PluginType
+from core.plugin_interface import PluginStatus, PluginType
 from plugins.jira_plugin import JiraPlugin
 
 
@@ -549,7 +548,6 @@ class TestJiraPlugin:
         assert plugin._circuit_breaker.get_state().value == "open"
 
         # Next request should fail immediately due to circuit breaker
-        from core.circuit_breaker import CircuitBreakerError
 
         with pytest.raises(
             Exception

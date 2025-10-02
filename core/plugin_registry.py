@@ -131,6 +131,21 @@ class PluginRegistry:
         plugin_id = f"{plugin_type.value}.{plugin_name}"
         return self._instances.get(plugin_id)
 
+    def get_plugin_instance_by_name(self, plugin_name: str) -> Optional[BasePlugin]:
+        """Get existing plugin instance by name only (searches all types)
+
+        Args:
+            plugin_name: Plugin name
+
+        Returns:
+            Plugin instance if found, None otherwise
+        """
+        # Search through all instances to find one with matching name
+        for plugin_id, instance in self._instances.items():
+            if plugin_id.endswith(f".{plugin_name}"):
+                return instance
+        return None
+
     def list_plugins(
         self, plugin_type: Optional[PluginType] = None
     ) -> Dict[str, List[str]]:

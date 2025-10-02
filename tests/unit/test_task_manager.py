@@ -3,13 +3,10 @@ Unit tests for TaskManager - TDD implementation
 Following the Red-Green-Refactor cycle for task lifecycle management
 """
 from datetime import datetime, timedelta
-from typing import Any, Dict
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from core.exceptions import BaseSystemError
-from core.plugin_registry import PluginRegistry
 from core.task_manager import (
     TaskEvent,
     TaskManager,
@@ -113,7 +110,8 @@ class TestTaskManager:
         result = await task_manager.update_task_progress(sample_progress)
 
         assert result.success is True
-        # Check that the call was made with the correct parameters (metadata may include additional fields)
+        # Check that the call was made with the correct parameters
+        # (metadata may include additional fields)
         call_args = task_plugin.update_task_status.call_args
         assert call_args[0] == ("TEST-123", "In Progress")
         assert call_args[1]["custom_fields"]["progress_percentage"] == 50
@@ -146,7 +144,9 @@ class TestTaskManager:
         assert result.success is True
         assert result.data["agent_id"] == "agent-001"
         task_plugin.update_task_status.assert_called_once_with(
-            "TEST-123", "In Progress", custom_fields={"assigned_agent": "agent-001"}
+            "TEST-123",
+            "In Progress",
+            custom_fields={"assigned_agent": "agent-001"},
         )
 
     @pytest.mark.asyncio
@@ -194,7 +194,8 @@ class TestTaskManager:
         result = await task_manager.handle_task_completion("TEST-123", completion_data)
 
         assert result.success is True
-        # Should mark as 'Needs Work' instead of 'In Review' due to failed tests
+        # Should mark as 'Needs Work' instead of 'In Review'
+        # due to failed tests
         task_plugin.update_task_status.assert_called_once_with(
             "TEST-123",
             "Needs Work",
@@ -241,10 +242,10 @@ class TestTaskManager:
 
         duration = task_manager.calculate_task_duration(start_time, end_time)
 
-        assert duration.total_seconds() >= 9000  # At least 2.5 hours
-        assert (
-            duration.total_seconds() <= 9600
-        )  # At most 2.67 hours (allowing for test execution time)
+        # At least 2.5 hours
+        assert duration.total_seconds() >= 9000
+        # At most 2.67 hours (allowing for test execution time)
+        assert duration.total_seconds() <= 9600
 
     @pytest.mark.asyncio
     async def test_format_progress_comment(self, task_manager, sample_progress):
@@ -254,7 +255,8 @@ class TestTaskManager:
         assert "In Progress" in comment
         assert "50%" in comment
         assert "Implementing JWT middleware" in comment
-        # Task ID is not included in the comment format, so remove this assertion
+        # Task ID is not included in the comment format,
+        # so remove this assertion
 
     @pytest.mark.asyncio
     async def test_validate_task_data(self, task_manager, sample_task_data):
@@ -285,7 +287,9 @@ class TestTaskManager:
 
         assert result.success is True
         task_plugin.update_task_status.assert_called_once_with(
-            "TEST-123", "Error", custom_fields={"error_type": "compilation_error"}
+            "TEST-123",
+            "Error",
+            custom_fields={"error_type": "compilation_error"},
         )
 
     @pytest.mark.asyncio
@@ -304,7 +308,7 @@ class TestTaskManager:
         assert metrics["total_tasks"] == 3
         assert metrics["completed_tasks"] == 2
         assert metrics["success_rate"] == 2 / 3
-        assert metrics["average_duration_hours"] == 3.25  # (4.5 + 2.0) / 2
+        assert metrics["average_duration_hours"] == 3.25
 
     @pytest.mark.asyncio
     async def test_batch_task_update(self, task_manager, mock_plugin_registry):
@@ -363,16 +367,13 @@ class TestTaskProgress:
         """Test TaskProgress validation"""
         # Valid progress percentage
         progress = TaskProgress(
-            task_id="TEST-123", status=TaskStatus.IN_PROGRESS, progress_percentage=50
+            task_id="TEST-123",
+            status=TaskStatus.IN_PROGRESS,
+            progress_percentage=50,
         )
         assert progress.progress_percentage == 50
 
         # Invalid progress percentage should be clamped
-        progress_invalid = TaskProgress(
-            task_id="TEST-123",
-            status=TaskStatus.IN_PROGRESS,
-            progress_percentage=150,  # Should be clamped to 100
-        )
         # Note: Validation logic would be in the actual implementation
 
 
@@ -395,7 +396,10 @@ class TestTaskEvent:
 
     def test_task_event_with_metadata(self):
         """Test TaskEvent with additional metadata"""
-        metadata = {"branch_name": "feature/TEST-123", "estimated_duration": "2 hours"}
+        metadata = {
+            "branch_name": "feature/TEST-123",
+            "estimated_duration": "2 hours",
+        }
 
         event = TaskEvent(
             type="task_assigned",

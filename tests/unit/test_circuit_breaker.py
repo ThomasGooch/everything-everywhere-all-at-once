@@ -1,8 +1,6 @@
 """Unit tests for circuit breaker functionality"""
 
 import asyncio
-import time
-from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 

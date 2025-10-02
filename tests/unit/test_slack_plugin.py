@@ -1,13 +1,10 @@
 """Unit tests for Slack plugin - TDD Implementation"""
 
-import asyncio
-import tempfile
-from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from core.plugin_interface import PluginResult, PluginStatus, PluginType
+from core.plugin_interface import PluginStatus, PluginType
 from plugins.slack_plugin import SlackPlugin
 
 

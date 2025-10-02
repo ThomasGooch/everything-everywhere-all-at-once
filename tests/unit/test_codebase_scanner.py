@@ -2,12 +2,9 @@
 Unit tests for CodebaseScanner - TDD implementation
 Following the Red-Green-Refactor cycle
 """
-import asyncio
-import os
 import shutil
 import tempfile
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 

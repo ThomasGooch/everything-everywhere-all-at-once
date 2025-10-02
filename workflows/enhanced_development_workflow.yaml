@@ -1,0 +1,315 @@
+# Enhanced Development Workflow
+# This workflow demonstrates the advanced capabilities of the enhanced plugins
+
+name: "Enhanced Development Workflow"
+version: "2.0"
+description: "Complete development workflow using enhanced Jira, GitHub, and Confluence plugins"
+
+# Workflow configuration
+config:
+  plugins:
+    - jira
+    - github 
+    - confluence
+  
+  settings:
+    auto_create_documentation: true
+    auto_assign_reviewers: true
+    use_ai_templates: true
+    enable_progress_tracking: true
+
+# Workflow steps
+steps:
+  # Step 1: Task Analysis and Setup
+  - name: "analyze_task"
+    plugin: "jira"
+    method: "get_task_with_context"
+    description: "Get task with full context including subtasks and linked issues"
+    parameters:
+      task_id: "{{ inputs.task_id }}"
+      include_subtasks: true
+      include_linked_issues: true
+      include_comments: true
+    outputs:
+      task_data: "{{ result.data }}"
+
+  # Step 2: Add AI Start Progress Comment
+  - name: "add_start_comment"
+    plugin: "jira"
+    method: "add_progress_comment"
+    description: "Add AI agent start comment to task"
+    parameters:
+      task_id: "{{ inputs.task_id }}"
+      template: "ai_agent_start"
+      progress_data:
+        agent_name: "Enhanced Development Agent"
+        workflow_name: "Enhanced Development Workflow"
+        estimated_duration: "45-60 minutes"
+        timestamp: "{{ current_timestamp }}"
+    condition: "{{ config.settings.enable_progress_tracking }}"
+
+  # Step 3: Setup Enhanced Workspace
+  - name: "setup_workspace"
+    plugin: "github"
+    method: "setup_workspace_with_analysis"
+    description: "Setup workspace with codebase analysis"
+    parameters:
+      repository_url: "{{ inputs.repository_url }}"
+      branch_strategy: "feature"
+      task_id: "{{ inputs.task_id }}"
+      title_slug: "{{ task_data.title | slugify }}"
+      base_branch: "main"
+      analyze_codebase: true
+    outputs:
+      workspace_path: "{{ result.data.workspace_path }}"
+      branch_name: "{{ result.data.branch_name }}"
+      codebase_analysis: "{{ result.data.codebase_analysis }}"
+
+  # Step 4: Implementation Phase (Simulated)
+  - name: "implement_feature"
+    type: "custom"
+    description: "AI implementation phase (simulated)"
+    script: |
+      # This would be replaced by actual AI implementation
+      echo "Implementing feature for {{ task_data.title }}"
+      echo "Working in branch: {{ branch_name }}"
+      echo "Languages detected: {{ codebase_analysis.languages | join(', ') }}"
+      
+      # Simulate file changes
+      touch "{{ workspace_path }}/src/new_feature.py"
+      touch "{{ workspace_path }}/tests/test_new_feature.py"
+      
+      # Return simulated implementation data
+      cat > /tmp/implementation_data.json << EOF
+      {
+        "files_modified": ["src/api.py", "src/utils.py"],
+        "files_created": ["src/new_feature.py", "tests/test_new_feature.py"],
+        "test_results": {"passed": 15, "total": 15},
+        "ai_cost": 0.75
+      }
+      EOF
+    outputs:
+      implementation_data: "{{ load_json('/tmp/implementation_data.json') }}"
+
+  # Step 5: Add Progress Update Comment
+  - name: "add_progress_comment"
+    plugin: "jira"
+    method: "add_progress_comment"
+    description: "Add implementation progress comment"
+    parameters:
+      task_id: "{{ inputs.task_id }}"
+      template: "ai_agent_progress"
+      progress_data:
+        steps_completed: ["analyze_codebase", "setup_workspace", "implement_feature"]
+        current_step: "create_pull_request"
+        estimated_completion: "{{ add_minutes(current_timestamp, 15) }}"
+        ai_cost: "{{ implementation_data.ai_cost }}"
+        files_changed: "{{ implementation_data.files_modified + implementation_data.files_created }}"
+    condition: "{{ config.settings.enable_progress_tracking }}"
+
+  # Step 6: Create Enhanced Pull Request
+  - name: "create_pull_request"
+    plugin: "github"
+    method: "create_pr_with_metadata"
+    description: "Create PR with rich metadata and auto-reviewers"
+    parameters:
+      repository: "{{ inputs.repository_owner }}/{{ inputs.repository_name }}"
+      source_branch: "{{ branch_name }}"
+      target_branch: "main"
+      title: "{{ task_data.title }}"
+      task_data: "{{ task_data }}"
+      implementation_data: "{{ implementation_data }}"
+      template_type: "ai_generated"
+    outputs:
+      pr_number: "{{ result.data.pr_number }}"
+      pr_url: "{{ result.data.pr_url }}"
+    condition: "{{ config.settings.auto_assign_reviewers }}"
+
+  # Step 7: Add PR Labels and Milestone
+  - name: "update_pr_metadata"
+    plugin: "github"
+    method: "update_pr_labels_and_milestone"
+    description: "Add labels and milestone to PR"
+    parameters:
+      repository: "{{ inputs.repository_owner }}/{{ inputs.repository_name }}"
+      pr_number: "{{ pr_number }}"
+      labels: 
+        - "ai-generated"
+        - "{{ task_data.task_id | lower }}"
+        - "enhancement"
+      milestone: "{{ inputs.milestone | default('Next Release') }}"
+
+  # Step 8: Create Documentation
+  - name: "create_documentation"
+    plugin: "confluence"
+    method: "create_page_from_template"
+    description: "Create implementation documentation"
+    parameters:
+      template_type: "api_documentation"
+      space_key: "{{ inputs.confluence_space | default('TECH') }}"
+      title: "{{ task_data.title }} - Implementation Documentation"
+      variables:
+        task_id: "{{ task_data.task_id }}"
+        task_title: "{{ task_data.title }}"
+        description: "{{ task_data.description }}"
+        pr_url: "{{ pr_url }}"
+        branch_name: "{{ branch_name }}"
+        languages: "{{ codebase_analysis.languages }}"
+        frameworks: "{{ codebase_analysis.frameworks }}"
+        files_modified: "{{ implementation_data.files_modified }}"
+        files_created: "{{ implementation_data.files_created }}"
+        test_results: "{{ implementation_data.test_results }}"
+        ai_cost: "{{ implementation_data.ai_cost }}"
+    outputs:
+      doc_page_id: "{{ result.data.page_id }}"
+      doc_page_url: "{{ result.data.page_url }}"
+    condition: "{{ config.settings.auto_create_documentation }}"
+
+  # Step 9: Update Custom Fields
+  - name: "update_task_fields"
+    plugin: "jira"
+    method: "update_custom_fields"
+    description: "Update task with implementation metadata"
+    parameters:
+      task_id: "{{ inputs.task_id }}"
+      custom_fields:
+        ai_generated: true
+        pr_url: "{{ pr_url }}"
+        documentation_url: "{{ doc_page_url }}"
+        implementation_cost: "{{ implementation_data.ai_cost }}"
+
+  # Step 10: Add Final Completion Comment
+  - name: "add_completion_comment"
+    plugin: "jira"
+    method: "add_progress_comment"
+    description: "Add AI completion comment"
+    parameters:
+      task_id: "{{ inputs.task_id }}"
+      template: "ai_agent_completion"
+      progress_data:
+        pr_number: "{{ pr_number }}"
+        pr_url: "{{ pr_url }}"
+        branch_name: "{{ branch_name }}"
+        commit_hash: "{{ implementation_data.commit_hash | default('abc123def456') }}"
+        commit_url: "{{ pr_url }}/commits/{{ implementation_data.commit_hash | default('abc123def456') }}"
+        files_modified: "{{ implementation_data.files_modified | length }}"
+        files_created: "{{ implementation_data.files_created | length }}"
+        test_status: "✅ {{ implementation_data.test_results.passed }}/{{ implementation_data.test_results.total }} passed"
+        documentation_url: "{{ doc_page_url }}"
+        ai_cost: "{{ implementation_data.ai_cost }}"
+    condition: "{{ config.settings.enable_progress_tracking }}"
+
+  # Step 11: Transition Task (Optional)
+  - name: "transition_task"
+    plugin: "jira"
+    method: "transition_task_with_validation"
+    description: "Move task to review state"
+    parameters:
+      task_id: "{{ inputs.task_id }}"
+      status: "In Review"
+      validate_transition: true
+    condition: "{{ inputs.auto_transition | default(false) }}"
+
+# Workflow inputs
+inputs:
+  - name: "task_id"
+    type: "string"
+    description: "Jira task ID (e.g., DEV-123)"
+    required: true
+
+  - name: "repository_url"
+    type: "string"
+    description: "Git repository URL"
+    required: true
+
+  - name: "repository_owner"
+    type: "string"
+    description: "Repository owner/organization"
+    required: true
+
+  - name: "repository_name"
+    type: "string"
+    description: "Repository name"
+    required: true
+
+  - name: "confluence_space"
+    type: "string"
+    description: "Confluence space key for documentation"
+    default: "TECH"
+
+  - name: "milestone"
+    type: "string"
+    description: "GitHub milestone for PR"
+    default: "Next Release"
+
+  - name: "auto_transition"
+    type: "boolean"
+    description: "Automatically transition task to In Review"
+    default: false
+
+# Workflow outputs
+outputs:
+  - name: "task_data"
+    description: "Enhanced task information with context"
+
+  - name: "pr_url"
+    description: "Created pull request URL"
+
+  - name: "doc_page_url" 
+    description: "Created documentation page URL"
+
+  - name: "implementation_summary"
+    description: "Summary of implementation results"
+    value: |
+      Enhanced Development Workflow completed successfully:
+      
+      📋 Task: {{ task_data.title }} ({{ task_data.task_id }})
+      🔧 Branch: {{ branch_name }}
+      📝 PR: {{ pr_url }}
+      📚 Docs: {{ doc_page_url }}
+      ✅ Tests: {{ implementation_data.test_results.passed }}/{{ implementation_data.test_results.total }} passed
+      💰 AI Cost: ${{ implementation_data.ai_cost }}
+      
+      🚀 Ready for review!
+
+# Error handling
+error_handling:
+  - step: "analyze_task"
+    on_error: "fail"
+    message: "Could not retrieve task information"
+
+  - step: "setup_workspace"
+    on_error: "fail" 
+    message: "Failed to setup development workspace"
+
+  - step: "create_pull_request"
+    on_error: "continue"
+    fallback:
+      - name: "create_draft_pr"
+        plugin: "github"
+        method: "create_draft_pr"
+        parameters:
+          repository: "{{ inputs.repository_owner }}/{{ inputs.repository_name }}"
+          source_branch: "{{ branch_name }}"
+          target_branch: "main"
+          title: "WIP: {{ task_data.title }}"
+          body: "Work in progress - automated implementation"
+
+  - step: "create_documentation" 
+    on_error: "continue"
+    message: "Documentation creation failed, but implementation continues"
+
+# Workflow metadata
+metadata:
+  created_by: "Enhanced Development Agent"
+  version: "2.0"
+  last_updated: "2024-12-01"
+  tags: ["development", "automation", "ai-enhanced", "jira", "github", "confluence"]
+  capabilities:
+    - "Advanced task context retrieval"
+    - "Intelligent branch naming and PR creation"
+    - "Automated reviewer assignment"
+    - "AI-powered template generation"
+    - "Progress tracking with rich comments"
+    - "Cross-platform integration"
+    - "Error handling and fallbacks"

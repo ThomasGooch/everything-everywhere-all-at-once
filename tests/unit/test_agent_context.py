@@ -1,12 +1,10 @@
 """Unit tests for AgentContext"""
 
-import asyncio
-from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 
-from core import AgentContext, PluginType
+from core import AgentContext
 
 
 class TestAgentContext:

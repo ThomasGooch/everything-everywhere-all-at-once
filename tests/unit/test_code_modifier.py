@@ -3,12 +3,10 @@ Unit tests for CodeModifier - TDD implementation
 Following the Red-Green-Refactor cycle
 """
 import asyncio
-import os
 import shutil
 import tempfile
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 
@@ -20,7 +18,6 @@ from core.code_modifier import (
     ValidationError,
     ValidationResult,
 )
-from core.exceptions import BaseSystemError
 from core.workspace_manager import Workspace, WorkspaceStatus
 
 

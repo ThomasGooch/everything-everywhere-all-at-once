@@ -1,0 +1,118 @@
+# AI Code Generation Test Workflow
+# =============================================================================
+# Simple workflow to test Claude AI integration for code generation
+
+name: "AI Code Generation Test"
+description: "Test workflow for Claude AI integration with simplified steps"
+version: "1.0.0"
+author: "AI Dev Orchestrator Team"
+tags: ["ai", "testing", "code-generation"]
+
+# Simple variables
+variables:
+  task_title: "${task_id} - Test Task"
+  task_description: "Generate a simple hello world function"
+
+# No complex prerequisites for testing
+prerequisites:
+  - condition: "${task_id}"
+    error_message: "Task ID is required"
+
+# Simple test steps
+steps:
+  
+  # Step 1: Mock task fetch (no external dependency)
+  - name: "mock_task_fetch"
+    description: "Mock task data for testing AI workflow"
+    type: "system_action"
+    action: "mock_data"
+    inputs:
+      mock_data: 
+        id: "${task_id}"
+        title: "${task_title}"
+        description: "${task_description}"
+        type: "feature"
+    outputs:
+      task: "task_data"
+    timeout: 5
+
+  # Step 2: AI Codebase Analysis
+  - name: "analyze_codebase"
+    description: "AI analysis of codebase structure and patterns"
+    type: "ai_action"
+    inputs:
+      task: "${task_data}"
+      repository_path: "/tmp/test-repo"
+      tech_stack: "Python"
+      coding_standards: "PEP8"
+    outputs:
+      analysis: "codebase_analysis"
+    max_tokens: 2000
+    temperature: 0.3
+    timeout: 120
+    on_error: "continue"
+
+  # Step 3: AI Implementation Plan
+  - name: "generate_implementation_plan"
+    description: "Generate detailed implementation plan"
+    type: "ai_action"
+    inputs:
+      task: "${task_data}"
+      codebase_analysis: "${codebase_analysis}"
+      project_context: {}
+    outputs:
+      plan: "implementation_plan"
+    max_tokens: 2000
+    temperature: 0.4
+    timeout: 120
+    on_error: "continue"
+
+  # Step 4: AI Code Generation
+  - name: "generate_code_implementation"
+    description: "Generate production-ready code"
+    type: "ai_action"
+    inputs:
+      task: "${task_data}"
+      plan: "${implementation_plan}"
+      codebase_analysis: "${codebase_analysis}"
+      existing_files: []
+    outputs:
+      implementation: "generated_code"
+    max_tokens: 3000
+    temperature: 0.2
+    timeout: 180
+    on_error: "continue"
+
+  # Step 5: AI Documentation Generation
+  - name: "generate_documentation"
+    description: "Generate documentation for the implementation"
+    type: "ai_action"
+    inputs:
+      task: "${task_data}"
+      implementation: "${generated_code}"
+      project_docs_style: "markdown"
+    outputs:
+      documentation: "generated_docs"
+    max_tokens: 1500
+    temperature: 0.5
+    timeout: 120
+    on_error: "continue"
+
+# Simple error handling
+error_handling:
+  default_strategy: "continue"
+  max_retries: 1
+  retry_delay: 10
+
+# Success criteria
+success_criteria:
+  - condition: "${generated_code.generated_text}"
+    description: "Code must be generated"
+
+# Post-execution
+post_execution:
+  always:
+    - action: "log_completion"
+      inputs:
+        workflow_name: "${name}"
+        success: "${workflow_success}"
