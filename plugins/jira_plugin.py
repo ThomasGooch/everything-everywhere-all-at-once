@@ -659,7 +659,7 @@ class JiraPlugin(TaskManagementPlugin):
             expand_param = ",".join(expand_fields)
 
             # Get task with expanded fields
-            url = self._build_api_url(f"issue/{task_id}")
+            url = self._get_api_url(f"issue/{task_id}")
             if expand_param:
                 url += f"?expand={expand_param}"
 
@@ -936,7 +936,7 @@ The AI agent has begun working on this task and will:
                 )
 
             # Make API call to update fields
-            url = self._build_api_url(f"issue/{task_id}")
+            url = self._get_api_url(f"issue/{task_id}")
             data = {"fields": fields_data}
 
             async with self._session.put(
@@ -962,7 +962,7 @@ The AI agent has begun working on this task and will:
         """Get available status transitions for a task"""
 
         try:
-            url = self._build_api_url(f"issue/{task_id}/transitions")
+            url = self._get_api_url(f"issue/{task_id}/transitions")
 
             async with self._session.get(
                 url, headers=self._get_request_headers()
@@ -1024,7 +1024,7 @@ The AI agent has begun working on this task and will:
                 return await self.update_task_status(task_id, status)
 
             # Perform the transition
-            url = self._build_api_url(f"issue/{task_id}/transitions")
+            url = self._get_api_url(f"issue/{task_id}/transitions")
             data = {"transition": {"id": transition_id}}
 
             async with self._session.post(
@@ -1076,7 +1076,7 @@ The AI agent has begun working on this task and will:
 
             data = {"fields": fields}
 
-            url = self._build_api_url("issue")
+            url = self._get_api_url("issue")
             async with self._session.post(
                 url, headers=self._get_request_headers(), data=json.dumps(data)
             ) as response:
@@ -1217,7 +1217,7 @@ The AI agent has begun working on this task and will:
             jql = " AND ".join(jql_parts)
 
             # Make search API call
-            url = self._build_api_url("search")
+            url = self._get_api_url("search")
             params = {
                 "jql": jql,
                 "maxResults": search_criteria.get("max_results", 50),

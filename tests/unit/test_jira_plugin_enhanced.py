@@ -131,7 +131,12 @@ class TestJiraPluginEnhanced:
         with patch.object(enhanced_jira_plugin, "_session") as mock_session:
             mock_response = MagicMock()
             mock_response.status = 201
-            mock_response.json = AsyncMock(return_value={"id": "comment-123"})
+            mock_response.json = AsyncMock(
+                return_value={
+                    "id": "comment-123",
+                    "author": {"displayName": "Test User"},
+                }
+            )
             mock_session.post.return_value.__aenter__.return_value = mock_response
 
             result = await enhanced_jira_plugin.add_progress_comment(
@@ -145,9 +150,9 @@ class TestJiraPluginEnhanced:
 
             # Verify the comment content was properly templated
             call_args = mock_session.post.call_args
-            comment_body = json.loads(call_args[1]["data"])["body"]
+            comment_body = call_args[1]["json"]["body"]
 
-            assert "🤖 AI Agent Progress Update" in comment_body
+            assert "🤖 **AI Agent Progress Update**" in comment_body
             assert "analyze_codebase ✅" in comment_body
             assert "generate_plan ✅" in comment_body
             assert "generate_code 🚧" in comment_body
@@ -303,7 +308,12 @@ class TestJiraPluginEnhanced:
         with patch.object(enhanced_jira_plugin, "_session") as mock_session:
             mock_response = MagicMock()
             mock_response.status = 201
-            mock_response.json = AsyncMock(return_value={"id": "comment-123"})
+            mock_response.json = AsyncMock(
+                return_value={
+                    "id": "comment-123",
+                    "author": {"displayName": "Test User"},
+                }
+            )
             mock_session.post.return_value.__aenter__.return_value = mock_response
 
             # Test AI agent start template
@@ -320,9 +330,9 @@ class TestJiraPluginEnhanced:
             assert result.success
 
             call_args = mock_session.post.call_args
-            comment_body = json.loads(call_args[1]["data"])["body"]
+            comment_body = call_args[1]["json"]["body"]
 
-            assert "🤖 AI Agent Started" in comment_body
+            assert "🤖 **AI Agent Started**" in comment_body
             assert "Development Agent" in comment_body
             assert "30-45 minutes" in comment_body
 

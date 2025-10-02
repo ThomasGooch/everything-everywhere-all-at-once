@@ -1,5 +1,6 @@
 """Unit tests for Jira plugin - TDD Implementation"""
 
+import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import aiohttp

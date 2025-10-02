@@ -2,6 +2,7 @@
 Unit tests for CodeModifier - TDD implementation
 Following the Red-Green-Refactor cycle
 """
+import asyncio
 import shutil
 import tempfile
 from datetime import datetime
