@@ -1,12 +1,13 @@
 """Integration tests for enhanced plugins working together"""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from plugins.jira_plugin import JiraPlugin
-from plugins.github_plugin import GitHubPlugin
-from plugins.confluence_plugin import ConfluencePlugin
+import pytest
+
 from core.plugin_interface import PluginResult
+from plugins.confluence_plugin import ConfluencePlugin
+from plugins.github_plugin import GitHubPlugin
+from plugins.jira_plugin import JiraPlugin
 
 
 @pytest.mark.integration

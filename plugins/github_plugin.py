@@ -3,6 +3,7 @@
 import json
 import logging
 import re
+import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -694,6 +695,7 @@ class GitHubPlugin(VersionControlPlugin):
             elif strategy == "release":
                 pattern = "release/{version}"
             else:
+                task_id = kwargs.get("task_id", "unknown")
                 pattern = f"{strategy}/{task_id}"
         else:
             pattern = branch_strategies[strategy]
@@ -877,9 +879,8 @@ class GitHubPlugin(VersionControlPlugin):
             )
 
             # Clone repository
-            workspace_path = (
-                f"/tmp/workspace_{workspace_config.get('task_id', 'unknown')}"
-            )
+            task_id = workspace_config.get("task_id", "unknown")
+            workspace_path = tempfile.mkdtemp(prefix=f"workspace_{task_id}_")
             clone_result = await self.clone_repository(repository_url, workspace_path)
             if not clone_result.success:
                 return clone_result
@@ -984,7 +985,7 @@ class GitHubPlugin(VersionControlPlugin):
                             detected_frameworks.add("Vue.js")
                         if "express" in deps:
                             detected_frameworks.add("Express")
-                except:
+                except Exception:
                     pass
 
             if (workspace / "requirements.txt").exists() or (
@@ -1130,7 +1131,10 @@ class GitHubPlugin(VersionControlPlugin):
         """Trigger GitHub Actions workflow"""
 
         try:
-            url = f"https://api.github.com/repos/{repository}/actions/workflows/{workflow_name}/dispatches"
+            url = (
+                f"https://api.github.com/repos/{repository}/actions/"
+                f"workflows/{workflow_name}/dispatches"
+            )
 
             data = {"ref": branch, "inputs": inputs or {}}
 
@@ -1248,7 +1252,10 @@ class GitHubPlugin(VersionControlPlugin):
                     pr_data = await response.json()
 
                     # Get status checks
-                    checks_url = f"https://api.github.com/repos/{repository}/commits/{pr_data['head']['sha']}/status"
+                    checks_url = (
+                        f"https://api.github.com/repos/{repository}/commits/"
+                        f"{pr_data['head']['sha']}/status"
+                    )
                     async with self._session.get(
                         checks_url, headers=self._get_request_headers()
                     ) as checks_response:
@@ -1262,7 +1269,10 @@ class GitHubPlugin(VersionControlPlugin):
                             status_checks = {}
 
                     # Get reviews
-                    reviews_url = f"https://api.github.com/repos/{repository}/pulls/{pr_number}/reviews"
+                    reviews_url = (
+                        f"https://api.github.com/repos/{repository}/pulls/"
+                        f"{pr_number}/reviews"
+                    )
                     async with self._session.get(
                         reviews_url, headers=self._get_request_headers()
                     ) as reviews_response:
@@ -1405,7 +1415,10 @@ class GitHubPlugin(VersionControlPlugin):
                     error_text = await response.text()
                     return PluginResult(
                         success=False,
-                        error=f"Failed to update labels/milestone: {response.status} - {error_text}",
+                        error=(
+                            f"Failed to update labels/milestone: "
+                            f"{response.status} - {error_text}"
+                        ),
                     )
 
         except Exception as e:

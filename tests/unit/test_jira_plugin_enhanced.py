@@ -1,11 +1,12 @@
 """Enhanced unit tests for Jira Plugin advanced features"""
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 import json
+from unittest.mock import AsyncMock, MagicMock, patch
 
-from plugins.jira_plugin import JiraPlugin
+import pytest
+
 from core.plugin_interface import PluginResult
+from plugins.jira_plugin import JiraPlugin
 
 
 @pytest.mark.integration
@@ -225,11 +226,11 @@ class TestJiraPluginEnhanced:
             mock_get_response = MagicMock()
             mock_get_response.status = 200
             mock_get_response.json = AsyncMock(return_value=mock_transitions)
-            
+
             mock_post_response = MagicMock()
             mock_post_response.status = 204
             mock_post_response.json = AsyncMock(return_value={"id": "TEST-123"})
-            
+
             mock_session.get.return_value.__aenter__.return_value = mock_get_response
             mock_session.post.return_value.__aenter__.return_value = mock_post_response
 
@@ -255,7 +256,9 @@ class TestJiraPluginEnhanced:
         with patch.object(enhanced_jira_plugin, "_session") as mock_session:
             mock_response = MagicMock()
             mock_response.status = 201
-            mock_response.json = AsyncMock(return_value={"key": "TEST-124", "id": "12346"})
+            mock_response.json = AsyncMock(
+                return_value={"key": "TEST-124", "id": "12346"}
+            )
             mock_session.post.return_value.__aenter__.return_value = mock_response
 
             result = await enhanced_jira_plugin.create_subtask(

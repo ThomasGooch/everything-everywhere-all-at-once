@@ -711,62 +711,79 @@ class WorkflowEngine:
             # Get the Claude plugin instance
             claude_plugin = self.plugin_registry.get_plugin_instance_by_name("claude")
             if not claude_plugin:
-                raise WorkflowExecutionError("Claude AI plugin not available for AI actions")
+                raise WorkflowExecutionError(
+                    "Claude AI plugin not available for AI actions"
+                )
 
-            # Resolve step inputs with context  
+            # Resolve step inputs with context
             resolved_inputs = self._resolve_step_inputs(step.inputs, context)
-            
+
             # Extract common AI parameters
-            max_tokens = resolved_inputs.get("max_tokens", step.max_tokens if hasattr(step, 'max_tokens') else 2000)
-            temperature = resolved_inputs.get("temperature", step.temperature if hasattr(step, 'temperature') else 0.3)
-            
+            max_tokens = resolved_inputs.get(
+                "max_tokens", step.max_tokens if hasattr(step, "max_tokens") else 2000
+            )
+            temperature = resolved_inputs.get(
+                "temperature", step.temperature if hasattr(step, "temperature") else 0.3
+            )
+
             # Build the prompt based on the step configuration
             prompt = await self._build_ai_prompt(step, resolved_inputs, context)
-            
+
             logger.info(f"Executing AI action '{step.name}' with Claude")
-            
+
             # Generate response using Claude
             result = await claude_plugin.generate_text(
-                prompt=prompt,
-                max_tokens=max_tokens,
-                temperature=temperature
+                prompt=prompt, max_tokens=max_tokens, temperature=temperature
             )
-            
+
             if not result.success:
-                raise WorkflowExecutionError(f"Claude AI generation failed: {result.error}")
-            
+                raise WorkflowExecutionError(
+                    f"Claude AI generation failed: {result.error}"
+                )
+
             # Structure the response according to expected outputs
             ai_response = {
                 "generated_text": result.data["generated_text"],
                 "model": result.data["model"],
                 "input_tokens": result.data["input_tokens"],
                 "output_tokens": result.data["output_tokens"],
-                "cost": result.data["cost"]
+                "cost": result.data["cost"],
             }
-            
+
             # If step specifies specific output structure, try to parse it
-            if step.name in ["analyze_codebase", "generate_implementation_plan", "generate_code_implementation"]:
-                ai_response = await self._parse_structured_ai_response(step.name, result.data["generated_text"], ai_response)
-            
-            logger.info(f"AI action '{step.name}' completed successfully (cost: ${result.data['cost']:.4f})")
-            
+            if step.name in [
+                "analyze_codebase",
+                "generate_implementation_plan",
+                "generate_code_implementation",
+            ]:
+                ai_response = await self._parse_structured_ai_response(
+                    step.name, result.data["generated_text"], ai_response
+                )
+
+            logger.info(
+                f"AI action '{step.name}' completed successfully (cost: ${result.data['cost']:.4f})"
+            )
+
             return ai_response
-            
+
         except Exception as e:
             logger.error(f"Error executing AI action '{step.name}': {e}")
             raise WorkflowExecutionError(f"AI action failed: {e}")
 
     async def _build_ai_prompt(
-        self, step: WorkflowStep, resolved_inputs: Dict[str, Any], context: Dict[str, Any]
+        self,
+        step: WorkflowStep,
+        resolved_inputs: Dict[str, Any],
+        context: Dict[str, Any],
     ) -> str:
         """Build AI prompt based on step configuration and context"""
-        
+
         # Check if step has a prompt_template specified
-        if hasattr(step, 'prompt_template') and step.prompt_template:
+        if hasattr(step, "prompt_template") and step.prompt_template:
             # TODO: Load template from file and render with inputs
             # For now, use a simple template based on step name
             pass
-        
+
         # Build prompt based on step name and inputs
         if step.name == "analyze_codebase":
             return self._build_codebase_analysis_prompt(resolved_inputs)
@@ -783,7 +800,7 @@ class WorkflowEngine:
                 f"Task: {task.get('title', 'No title provided')}",
                 f"Description: {task.get('description', 'No description provided')}",
                 "",
-                "Please provide a detailed response for this development task."
+                "Please provide a detailed response for this development task.",
             ]
             return "\n".join(prompt_parts)
 
@@ -791,7 +808,7 @@ class WorkflowEngine:
         """Build prompt for codebase analysis"""
         task = inputs.get("task", {})
         repository_path = inputs.get("repository_path", "")
-        
+
         return f"""Analyze the codebase for the following development task:
 
 Task: {task.get('title', 'No title')}
@@ -812,7 +829,7 @@ Format your response as a structured analysis that can guide implementation plan
         """Build prompt for implementation plan generation"""
         task = inputs.get("task", {})
         codebase_analysis = inputs.get("codebase_analysis", {})
-        
+
         return f"""Create a detailed implementation plan for the following task:
 
 Task: {task.get('title', 'No title')}
@@ -837,7 +854,7 @@ Format the response as a structured plan that can guide code generation."""
         task = inputs.get("task", {})
         plan = inputs.get("plan", {})
         codebase_analysis = inputs.get("codebase_analysis", {})
-        
+
         return f"""Generate production-ready code implementation for:
 
 Task: {task.get('title', 'No title')}
@@ -870,7 +887,7 @@ Format your response with clear file separations and explanations."""
         """Build prompt for documentation generation"""
         task = inputs.get("task", {})
         implementation = inputs.get("implementation", {})
-        
+
         return f"""Generate comprehensive documentation for the implementation of:
 
 Task: {task.get('title', 'No title')}
@@ -892,63 +909,74 @@ Format as clear, well-structured documentation suitable for developers."""
         self, step_name: str, generated_text: str, base_response: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Parse AI response into structured format based on step type"""
-        
+
         # For now, return the base response with the generated text
-        # In a more advanced implementation, we could parse the text 
+        # In a more advanced implementation, we could parse the text
         # into structured data based on the step requirements
-        
+
         if step_name == "analyze_codebase":
-            base_response.update({
-                "analysis": generated_text,
-                "structure": "analyzed",
-                "patterns": "identified"
-            })
+            base_response.update(
+                {
+                    "analysis": generated_text,
+                    "structure": "analyzed",
+                    "patterns": "identified",
+                }
+            )
         elif step_name == "generate_implementation_plan":
-            base_response.update({
-                "plan": generated_text,
-                "files_to_modify": ["to_be_parsed"],
-                "estimated_effort": "medium",
-                "summary": generated_text[:200] + "..." if len(generated_text) > 200 else generated_text
-            })
+            base_response.update(
+                {
+                    "plan": generated_text,
+                    "files_to_modify": ["to_be_parsed"],
+                    "estimated_effort": "medium",
+                    "summary": generated_text[:200] + "..."
+                    if len(generated_text) > 200
+                    else generated_text,
+                }
+            )
         elif step_name == "generate_code_implementation":
-            base_response.update({
-                "implementation": generated_text,
-                "files": ["to_be_parsed"],
-                "tests": ["to_be_parsed"],
-                "stats": {"lines_added": 0, "lines_removed": 0}
-            })
-        
+            base_response.update(
+                {
+                    "implementation": generated_text,
+                    "files": ["to_be_parsed"],
+                    "tests": ["to_be_parsed"],
+                    "stats": {"lines_added": 0, "lines_removed": 0},
+                }
+            )
+
         return base_response
 
-    def _resolve_step_inputs(self, inputs: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    def _resolve_step_inputs(
+        self, inputs: Dict[str, Any], context: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Resolve step inputs with proper handling of complex data structures"""
         resolved_inputs = {}
-        
+
         for key, value in inputs.items():
             if isinstance(value, str) and "${" in value:
                 # This is a template string that needs resolution
                 resolved_inputs[key] = self.variable_resolver.resolve(value, context)
-                
+
                 # Try to get the actual context object if it's a reference
                 if value.startswith("${") and value.endswith("}"):
                     var_name = value[2:-1]
                     if var_name in context:
                         resolved_inputs[key] = context[var_name]
-                        
+
             elif isinstance(value, dict):
                 # Recursively resolve dictionary values
                 resolved_inputs[key] = self._resolve_step_inputs(value, context)
             elif isinstance(value, list):
                 # Resolve list values
                 resolved_inputs[key] = [
-                    self.variable_resolver.resolve(item, context) if isinstance(item, str) and "${" in item
+                    self.variable_resolver.resolve(item, context)
+                    if isinstance(item, str) and "${" in item
                     else item
                     for item in value
                 ]
             else:
                 # Keep the value as-is
                 resolved_inputs[key] = value
-                
+
         return resolved_inputs
 
     async def _execute_system_action(
@@ -956,44 +984,50 @@ Format as clear, well-structured documentation suitable for developers."""
     ) -> Dict[str, Any]:
         """Execute a system action step"""
         try:
-            # Resolve step inputs with context  
+            # Resolve step inputs with context
             resolved_inputs = self._resolve_step_inputs(step.inputs, context)
-            
+
             action = step.action
-            
+
             if action == "mock_data":
                 # Return mock data for testing
                 mock_data = resolved_inputs.get("mock_data", {})
                 logger.info(f"Generated mock data for step '{step.name}': {mock_data}")
                 return mock_data
-            
+
             elif action == "log_completion":
                 # Log workflow completion
                 workflow_name = resolved_inputs.get("workflow_name", "Unknown")
                 success = resolved_inputs.get("success", False)
-                logger.info(f"Workflow '{workflow_name}' completed with success: {success}")
-                return {"logged": True, "workflow_name": workflow_name, "success": success}
-            
+                logger.info(
+                    f"Workflow '{workflow_name}' completed with success: {success}"
+                )
+                return {
+                    "logged": True,
+                    "workflow_name": workflow_name,
+                    "success": success,
+                }
+
             elif action == "collect_metrics":
                 # Mock metrics collection
                 metrics = {
                     "execution_time": resolved_inputs.get("execution_time", "0s"),
                     "cost": resolved_inputs.get("cost", 0.0),
-                    "success": resolved_inputs.get("success", False)
+                    "success": resolved_inputs.get("success", False),
                 }
                 logger.info(f"Collected metrics: {metrics}")
                 return metrics
-            
+
             elif action == "log_workflow_completion":
                 # Log detailed workflow completion
                 results = resolved_inputs.get("results", {})
                 logger.info(f"Workflow completion logged: {results}")
                 return {"logged": True, "results": results}
-            
+
             else:
                 logger.warning(f"Unknown system action: {action}")
                 return {"result": f"unknown_action_{action}"}
-                
+
         except Exception as e:
             logger.error(f"Error executing system action '{step.name}': {e}")
             raise WorkflowExecutionError(f"System action failed: {e}")

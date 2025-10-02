@@ -1,11 +1,12 @@
 """Enhanced unit tests for GitHub Plugin advanced features"""
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 import json
+from unittest.mock import AsyncMock, MagicMock, patch
 
-from plugins.github_plugin import GitHubPlugin
+import pytest
+
 from core.plugin_interface import PluginResult
+from plugins.github_plugin import GitHubPlugin
 
 
 @pytest.mark.integration

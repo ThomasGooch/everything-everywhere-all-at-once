@@ -1012,7 +1012,10 @@ The AI agent has begun working on this task and will:
                 if not valid_transition:
                     return PluginResult(
                         success=False,
-                        error=f"Invalid transition to '{status}'. Available: {[t['to_status'] for t in available_transitions]}",
+                        error=(
+                            f"Invalid transition to '{status}'. Available: "
+                            f"{[t['to_status'] for t in available_transitions]}"
+                        ),
                     )
 
                 transition_id = valid_transition["id"]
@@ -1114,7 +1117,6 @@ The AI agent has begun working on this task and will:
                 )
 
             # Update the epic link field
-            fields = {epic_link_field: epic_key}
             return await self.update_custom_fields(task_id, {"epic_link": epic_key})
 
         except Exception as e:

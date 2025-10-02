@@ -1,12 +1,13 @@
 """Unit tests for Claude AI Plugin"""
 
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 from anthropic.types.message import Usage
 from anthropic.types.text_block import TextBlock
 
-from plugins.claude_plugin import ClaudePlugin
 from core.plugin_interface import PluginStatus, PluginType
+from plugins.claude_plugin import ClaudePlugin
 
 
 class TestClaudePlugin:

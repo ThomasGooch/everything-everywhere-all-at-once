@@ -1,10 +1,11 @@
 """Unit tests for Confluence Plugin"""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from plugins.confluence_plugin import ConfluencePlugin
+import pytest
+
 from core.plugin_interface import PluginResult
+from plugins.confluence_plugin import ConfluencePlugin
 
 
 @pytest.mark.integration
