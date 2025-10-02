@@ -149,9 +149,15 @@ success_criteria:
 
     def test_workflow_validation_success(self):
         """Test successful workflow validation"""
-        # RED: This will fail since validation logic doesn't exist yet
         workflow = self.engine.parse_workflow(self.simple_workflow_yaml)
-        validation_result = self.engine.validate_workflow(workflow)
+
+        # Mock plugin registry to return a valid plugin
+        with patch.object(self.engine, "plugin_registry") as mock_registry:
+            mock_plugin = Mock()
+            mock_plugin.get_task.return_value = Mock()  # Mock the required action
+            mock_registry.get_plugin_instance_by_name.return_value = mock_plugin
+
+            validation_result = self.engine.validate_workflow(workflow)
 
         assert validation_result.is_valid is True
         assert len(validation_result.errors) == 0
@@ -244,7 +250,7 @@ steps:
         with patch.object(self.engine, "plugin_registry") as mock_registry:
             mock_plugin = AsyncMock()
             mock_plugin.get_task.side_effect = Exception("Plugin failed")
-            mock_registry.get_plugin_instance.return_value = mock_plugin
+            mock_registry.get_plugin_instance_by_name.return_value = mock_plugin
 
             context = {"task_id": "TEST-123"}
             result = await self.engine.execute_workflow(workflow, context)
@@ -277,7 +283,7 @@ steps:
                 return {"result": "success"}
 
             mock_plugin.slow_action = slow_operation
-            mock_registry.get_plugin_instance.return_value = mock_plugin
+            mock_registry.get_plugin_instance_by_name.return_value = mock_plugin
 
             result = await self.engine.execute_workflow(workflow, {})
 
@@ -466,7 +472,7 @@ steps:
 
         # Mock plugin registry to return no plugins
         with patch.object(self.engine, "plugin_registry") as mock_registry:
-            mock_registry.get_plugin_instance.return_value = None
+            mock_registry.get_plugin_instance_by_name.return_value = None
 
             validation_result = self.engine.validate_workflow(workflow)
 
