@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from core.plugin_interface import PluginResult
+from core.plugin_interface import PluginResult, PluginStatus, PluginType
 from plugins.confluence_plugin import ConfluencePlugin
 from plugins.github_plugin import GitHubPlugin
 from plugins.jira_plugin import JiraPlugin

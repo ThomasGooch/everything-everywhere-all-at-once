@@ -558,12 +558,16 @@ class WorkflowEngine:
 
                 duration = datetime.utcnow() - start_time
 
+                # Extract cost from result if available
+                cost = result.get("cost", 0.0) if isinstance(result, dict) else 0.0
+                
                 return StepResult(
                     step_name=step.name,
                     success=True,
                     duration=duration,
                     outputs=result,
                     retry_count=attempt,
+                    cost=cost,
                 )
 
             except asyncio.TimeoutError:
@@ -796,9 +800,18 @@ class WorkflowEngine:
         else:
             # Generic AI prompt
             task = resolved_inputs.get("task", {})
+            
+            # Handle case where task might be a string instead of dict
+            if isinstance(task, str):
+                task_title = task
+                task_description = task
+            else:
+                task_title = task.get('title', 'No title provided') if isinstance(task, dict) else str(task)
+                task_description = task.get('description', 'No description provided') if isinstance(task, dict) else str(task)
+            
             prompt_parts = [
-                f"Task: {task.get('title', 'No title provided')}",
-                f"Description: {task.get('description', 'No description provided')}",
+                f"Task: {task_title}",
+                f"Description: {task_description}",
                 "",
                 "Please provide a detailed response for this development task.",
             ]
@@ -809,10 +822,18 @@ class WorkflowEngine:
         task = inputs.get("task", {})
         repository_path = inputs.get("repository_path", "")
 
+        # Handle case where task might be a string instead of dict
+        if isinstance(task, str):
+            task_title = task
+            task_description = task
+        else:
+            task_title = task.get('title', 'No title') if isinstance(task, dict) else str(task)
+            task_description = task.get('description', 'No description') if isinstance(task, dict) else str(task)
+
         return f"""Analyze the codebase for the following development task:
 
-Task: {task.get('title', 'No title')}
-Description: {task.get('description', 'No description')}
+Task: {task_title}
+Description: {task_description}
 Repository Path: {repository_path}
 
 Please provide a comprehensive analysis including:
@@ -830,13 +851,27 @@ Format your response as a structured analysis that can guide implementation plan
         task = inputs.get("task", {})
         codebase_analysis = inputs.get("codebase_analysis", {})
 
+        # Handle case where inputs might be strings instead of dicts
+        if isinstance(task, str):
+            task_title = task
+            task_description = task
+        else:
+            task_title = task.get('title', 'No title') if isinstance(task, dict) else str(task)
+            task_description = task.get('description', 'No description') if isinstance(task, dict) else str(task)
+            
+        analysis_text = (
+            codebase_analysis.get('generated_text', 'No analysis available') 
+            if isinstance(codebase_analysis, dict) 
+            else str(codebase_analysis)
+        )
+
         return f"""Create a detailed implementation plan for the following task:
 
-Task: {task.get('title', 'No title')}
-Description: {task.get('description', 'No description')}
+Task: {task_title}
+Description: {task_description}
 
 Codebase Analysis:
-{codebase_analysis.get('generated_text', 'No analysis available')}
+{analysis_text}
 
 Please provide an implementation plan including:
 1. Summary of the approach
@@ -855,16 +890,36 @@ Format the response as a structured plan that can guide code generation."""
         plan = inputs.get("plan", {})
         codebase_analysis = inputs.get("codebase_analysis", {})
 
+        # Handle case where inputs might be strings instead of dicts
+        if isinstance(task, str):
+            task_title = task
+            task_description = task
+        else:
+            task_title = task.get('title', 'No title') if isinstance(task, dict) else str(task)
+            task_description = task.get('description', 'No description') if isinstance(task, dict) else str(task)
+            
+        plan_text = (
+            plan.get('generated_text', 'No plan available') 
+            if isinstance(plan, dict) 
+            else str(plan)
+        )
+        
+        analysis_text = (
+            codebase_analysis.get('generated_text', 'No context available') 
+            if isinstance(codebase_analysis, dict) 
+            else str(codebase_analysis)
+        )
+
         return f"""Generate production-ready code implementation for:
 
-Task: {task.get('title', 'No title')}
-Description: {task.get('description', 'No description')}
+Task: {task_title}
+Description: {task_description}
 
 Implementation Plan:
-{plan.get('generated_text', 'No plan available')}
+{plan_text}
 
 Codebase Context:
-{codebase_analysis.get('generated_text', 'No context available')}
+{analysis_text}
 
 Requirements:
 - Write clean, maintainable code
@@ -888,13 +943,27 @@ Format your response with clear file separations and explanations."""
         task = inputs.get("task", {})
         implementation = inputs.get("implementation", {})
 
+        # Handle case where inputs might be strings instead of dicts
+        if isinstance(task, str):
+            task_title = task
+            task_description = task
+        else:
+            task_title = task.get('title', 'No title') if isinstance(task, dict) else str(task)
+            task_description = task.get('description', 'No description') if isinstance(task, dict) else str(task)
+            
+        implementation_text = (
+            implementation.get('generated_text', 'No implementation details available') 
+            if isinstance(implementation, dict) 
+            else str(implementation)
+        )
+
         return f"""Generate comprehensive documentation for the implementation of:
 
-Task: {task.get('title', 'No title')}
-Description: {task.get('description', 'No description')}
+Task: {task_title}
+Description: {task_description}
 
 Implementation:
-{implementation.get('generated_text', 'No implementation details available')}
+{implementation_text}
 
 Please create:
 1. API documentation (if applicable)
@@ -953,14 +1022,17 @@ Format as clear, well-structured documentation suitable for developers."""
 
         for key, value in inputs.items():
             if isinstance(value, str) and "${" in value:
-                # This is a template string that needs resolution
-                resolved_inputs[key] = self.variable_resolver.resolve(value, context)
-
-                # Try to get the actual context object if it's a reference
+                # Try to get the actual context object if it's a reference first
                 if value.startswith("${") and value.endswith("}"):
                     var_name = value[2:-1]
                     if var_name in context:
                         resolved_inputs[key] = context[var_name]
+                    else:
+                        # Fallback to variable resolver if context key doesn't exist
+                        resolved_inputs[key] = self.variable_resolver.resolve(value, context)
+                else:
+                    # This is a template string that needs resolution
+                    resolved_inputs[key] = self.variable_resolver.resolve(value, context)
 
             elif isinstance(value, dict):
                 # Recursively resolve dictionary values
