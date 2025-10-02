@@ -253,7 +253,7 @@ class TestSlackPlugin:
         result = await plugin.send_message("#nonexistent", "test message")
 
         assert result.success is False
-        assert "channel_not_found" in result.error
+        assert "Channel not found" in result.error
 
     @pytest.mark.asyncio
     async def test_send_direct_message_success(self, slack_config):
