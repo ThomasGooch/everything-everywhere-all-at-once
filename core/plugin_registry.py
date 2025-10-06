@@ -4,7 +4,7 @@ import importlib
 import inspect
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Type, Callable
 
 from .plugin_interface import BasePlugin, PluginError, PluginType, PluginValidationError
 
@@ -14,11 +14,13 @@ logger = logging.getLogger(__name__)
 class PluginRegistry:
     """Central registry for managing all plugins"""
 
-    def __init__(self):
+    def __init__(self, plugins_dir: str = "plugins"):
         """Initialize plugin registry"""
         self._plugins: Dict[str, Dict[str, Type[BasePlugin]]] = {}
         self._instances: Dict[str, BasePlugin] = {}
         self._plugin_paths: List[Path] = []
+        self.plugins_dir = Path(plugins_dir)
+        self.registered_tools: Dict[str, Callable] = {}
 
         # Initialize plugin type dictionaries
         for plugin_type in PluginType:
@@ -132,15 +134,19 @@ class PluginRegistry:
         return self._instances.get(plugin_id)
 
     def get_plugin_instance_by_name(self, plugin_name: str) -> Optional[BasePlugin]:
-        """Get existing plugin instance by name only (searches all types)
+        """Get existing plugin instance by name or full plugin ID
 
         Args:
-            plugin_name: Plugin name
+            plugin_name: Plugin name (e.g., "jira") or full plugin ID (e.g., "task_management.jira")
 
         Returns:
             Plugin instance if found, None otherwise
         """
-        # Search through all instances to find one with matching name
+        # First try exact match with plugin ID
+        if plugin_name in self._instances:
+            return self._instances[plugin_name]
+        
+        # Then search through all instances to find one with matching name
         for plugin_id, instance in self._instances.items():
             if plugin_id.endswith(f".{plugin_name}"):
                 return instance
@@ -331,3 +337,71 @@ class PluginRegistry:
                     )
 
         return info
+
+    def discover_plugins(self) -> List[str]:
+        """Discover available plugins in the plugins directory.
+        
+        Returns:
+            List of discovered plugin names
+        """
+        plugins = []
+        if not self.plugins_dir.exists():
+            return plugins
+            
+        for plugin_dir in self.plugins_dir.iterdir():
+            if plugin_dir.is_dir() and (plugin_dir / "tools.py").exists():
+                plugins.append(plugin_dir.name)
+        return plugins
+
+    def register_plugin_tools(self, plugin_name: str) -> None:
+        """Register tools from a specific plugin.
+        
+        Args:
+            plugin_name: Name of the plugin to register tools from
+        """
+        try:
+            tools_module = importlib.import_module(f"{self.plugins_dir.name}.{plugin_name}.tools")
+            if hasattr(tools_module, 'register_tools'):
+                plugin_tools = tools_module.register_tools()
+                if plugin_tools:
+                    self.registered_tools.update(plugin_tools)
+                    logger.info(f"Registered {len(plugin_tools)} tools from plugin {plugin_name}")
+        except ImportError as e:
+            logger.warning(f"Could not load plugin {plugin_name}: {e}")
+        except Exception as e:
+            logger.error(f"Error registering tools for plugin {plugin_name}: {e}")
+
+    def register_all_plugins(self) -> None:
+        """Register tools from all discovered plugins."""
+        for plugin_name in self.discover_plugins():
+            self.register_plugin_tools(plugin_name)
+
+    def get_available_tools(self) -> List[str]:
+        """Get list of all available tool names.
+        
+        Returns:
+            List of registered tool names
+        """
+        return list(self.registered_tools.keys())
+
+    def execute_tool(self, tool_name: str, **kwargs) -> Any:
+        """Execute a registered tool.
+        
+        Args:
+            tool_name: Name of the tool to execute
+            **kwargs: Arguments to pass to the tool
+            
+        Returns:
+            Tool execution result
+            
+        Raises:
+            ValueError: If tool is not found
+        """
+        if tool_name not in self.registered_tools:
+            raise ValueError(f"Tool '{tool_name}' not found")
+        
+        try:
+            return self.registered_tools[tool_name](**kwargs)
+        except Exception as e:
+            logger.error(f"Error executing tool {tool_name}: {e}")
+            raise

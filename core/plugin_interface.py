@@ -19,6 +19,7 @@ class PluginType(Enum):
     DOCUMENTATION = "documentation"
     AI_PROVIDER = "ai_provider"
     CI_CD = "ci_cd"
+    ORCHESTRATOR = "orchestrator"
 
 
 class PluginStatus(Enum):

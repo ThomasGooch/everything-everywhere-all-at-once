@@ -1,610 +1,250 @@
-# Getting Started with AI Development Automation System
+# Getting Started - AI Development Automation System
 
-## Overview
+This guide will walk you through setting up and using the AI Development Automation System for the first time.
 
-Welcome to the **AI Development Automation System** - a production-ready, enterprise-scale platform that automates your entire development workflow from Jira task to merged pull request with comprehensive AI-powered code generation.
+## 📋 Prerequisites Checklist
 
-**Current Status:** 417 tests passing, 5 plugins implemented, enterprise deployment ready
+Before starting, ensure you have:
 
-**What You'll Accomplish:**
-- 🚀 Clone and setup the system in under 5 minutes
-- 🤖 Automate complete development workflows with AI assistance
-- 🔧 Integrate Jira, GitHub, Slack, Confluence, and Claude AI
-- 📊 Execute production-ready workflows with comprehensive testing
-- 🎯 Transform task descriptions into production code automatically
+- [ ] **Python 3.11 or higher** installed
+- [ ] **Poetry** package manager installed  
+- [ ] **Claude CLI** installed and configured
+- [ ] **Git** configured with SSH keys for GitHub
+- [ ] **Jira API access** with an API key
+- [ ] **Terminal/Command line** access
 
-**Time Investment:** 5 minutes setup, 90 seconds per automated workflow execution
+## 🔧 Step-by-Step Setup
 
----
+### 1. Install Python Dependencies
 
-## Quick Start: Clone and Setup
-
-### Step 1: Repository Setup (2 minutes)
-
-**Clone the Repository:**
 ```bash
-# Clone the AI Development Automation System
-git clone https://github.com/yourorg/ai-dev-orchestrator
-cd ai-dev-orchestrator
+# Navigate to the project directory
+cd /path/to/ai-development-automation
 
-# Install with Poetry (production dependency management)
+# Install dependencies with Poetry
 poetry install
 
-# Activate the virtual environment
-poetry shell
-
-# Verify installation with comprehensive test suite
-poetry run pytest tests/ -v
-# Expected: ✅ 417 tests passing
+# Verify installation
+poetry run python --version
 ```
 
-**Verify System Health:**
+### 2. Configure Claude CLI
+
+Ensure Claude CLI is installed and working:
+
 ```bash
-# Run quality assurance checks (matches production CI/CD)
-poetry run black core/ plugins/ --check        # Code formatting
-poetry run flake8 core/ plugins/               # Linting
-poetry run mypy core/ plugins/                 # Type checking
+# Check Claude CLI is available
+claude --version
 
-# List available workflows
-poetry run python -m workflows list
-# Expected: Standard Development Workflow available
+# Test Claude CLI (should open interactive session)
+claude --print "Hello, Claude!"
 ```
 
-### Step 2: Environment Configuration (2 minutes)
+If Claude CLI isn't installed, visit the [Claude CLI documentation](https://docs.anthropic.com/en/docs/claude-code) for installation instructions.
 
-**Create Environment File:**
+### 3. Set Up Jira Integration
+
+#### Get Your Jira API Key
+
+1. **Log in to Jira** in your web browser
+2. **Go to Account Settings** (click your profile picture → Account settings)
+3. **Navigate to Security** tab
+4. **Create API token** - Click "Create API token"
+5. **Copy the token** - Save it securely (you won't see it again)
+
+#### Create Environment File
+
+Create a `.env` file in the project root:
+
 ```bash
-# Copy example configuration
-cp .env.example .env
+# Create the .env file
+touch .env
 
-# Edit with your credentials
-nano .env  # or use your preferred editor
+# Add your Jira configuration
+cat > .env << EOF
+JIRA_BASE_URL=https://your-company.atlassian.net
+JIRA_API_KEY=your_api_key_here
+JIRA_USERNAME=your-email@company.com
+JIRA_PROJECT_KEY=PROJ
+EOF
 ```
 
-**Required Configuration (.env file):**
+**Replace with your actual values:**
+- `your-company.atlassian.net` - Your Jira domain
+- `your_api_key_here` - The API token you created
+- `your-email@company.com` - Your Jira login email
+- `PROJ` - Your Jira project key (usually 2-4 letters)
+
+### 4. Configure Git and GitHub
+
+Ensure your Git is configured for SSH access:
+
 ```bash
-# === JIRA INTEGRATION ===
-JIRA_URL=https://yourcompany.atlassian.net
-JIRA_EMAIL=your.email@company.com  
-JIRA_API_TOKEN=your_jira_api_token_here
-
-# === GITHUB INTEGRATION ===
-GITHUB_TOKEN=your_github_personal_access_token
-GITHUB_REPOSITORY=git@github.com:yourusername/yourrepo.git
-
-# === AI INTEGRATION ===
-ANTHROPIC_API_KEY=your_claude_api_key_here
-
-# === OPTIONAL INTEGRATIONS ===
-SLACK_BOT_TOKEN=your_slack_bot_token  # For team notifications
-CONFLUENCE_API_TOKEN=your_confluence_token  # For documentation updates
-```
-
-**Get Your API Tokens (1 minute each):**
-
-**Jira API Token:**
-1. Visit https://id.atlassian.com/manage-profile/security/api-tokens
-2. Click "Create API token" 
-3. Label: "AI Development System"
-4. Copy token to `.env` file
-
-**GitHub Token:**
-1. GitHub Settings → Developer settings → Personal access tokens
-2. Generate new token (classic)
-3. Scopes: `repo`, `read:user`, `write:repo_hook`
-4. Copy token to `.env` file
-
-**Claude AI Token:**
-1. Visit https://console.anthropic.com/
-2. Go to API Keys section
-3. Create new key for "AI Development System"
-4. Copy to `.env` file
-
-### Step 3: Test Configuration (1 minute)
-
-**Validate Your Setup:**
-```bash
-# Test all plugin connections
-poetry run python -m core.health_check --all-plugins
-
-# Expected output:
-# ✅ Jira plugin: Connected (yourcompany.atlassian.net)
-# ✅ GitHub plugin: Connected (github.com) 
-# ✅ Claude AI plugin: Connected (Anthropic API)
-# ⚠️ Slack plugin: Skipped (no token configured)
-# ⚠️ Confluence plugin: Skipped (no token configured)
-```
-
-**Test Workflow Validation:**
-```bash
-# Validate the standard workflow
-poetry run python -m workflows validate standard_dev_workflow
-
-# Expected: Workflow validated successfully with plugin dependencies confirmed
-```
-
----
-
-## Your First Automated Workflow (90 seconds)
-
-### Prerequisites
-
-**You Need:**
-1. A Jira task with clear description
-2. A GitHub repository with write access
-3. SSH keys configured for GitHub (recommended)
-
-### Execute the Workflow
-
-**Basic Command:**
-```bash
-poetry run python -m workflows execute \
-  --workflow standard_dev_workflow \
-  --task-id YOUR-TASK-ID \
-  --repository-url git@github.com:yourusername/yourrepo.git
-```
-
-**Real Example:**
-```bash
-# Replace with your actual values
-poetry run python -m workflows execute \
-  --workflow standard_dev_workflow \
-  --task-id PROJ-123 \
-  --repository-url git@github.com:johndoe/my-app.git
-```
-
-**Advanced Options:**
-```bash
-poetry run python -m workflows execute \
-  --workflow standard_dev_workflow \
-  --task-id PROJ-123 \
-  --repository-url git@github.com:johndoe/my-app.git \
-  --base-branch main \
-  --team-channel "#development" \
-  --notify-team
-```
-
-### Monitor Real-Time Progress
-
-```
-🚀 Executing workflow: Standard Development Workflow
-📊 System Status: 417 tests passing, all quality gates active
-
-⏳ Step 1/17: Fetching task details from Jira...
-✅ Step 1/17: Task retrieved - "Add user authentication to dashboard"
-
-⏳ Step 2/17: Updating task status to In Progress...
-✅ Step 2/17: Task status updated with progress tracking
-
-⏳ Step 3/17: Cloning repository and creating feature branch...
-✅ Step 3/17: Branch 'feature/proj-123-add-user-auth' created
-
-⏳ Step 4/17: AI-powered codebase analysis...
-✅ Step 4/17: FastAPI project detected, patterns identified
-
-⏳ Step 5/17: AI implementation plan generation...
-✅ Step 5/17: Plan created - 3 files to modify, 2 new files
-
-⏳ Step 6/17: Claude AI code generation...
-✅ Step 6/17: Production code generated (245 lines, 95% test coverage)
-
-⏳ Step 7/17: Applying code changes with quality checks...
-✅ Step 7/17: Code applied, formatting validated
-
-⏳ Step 8/17: Running comprehensive test suite...
-✅ Step 8/17: All tests passed (15/15), coverage 95%+
-
-⏳ Step 9/17: Committing with proper attribution...
-✅ Step 9/17: Commit created with detailed message
-
-⏳ Step 10/17: Pushing to GitHub with security validation...
-✅ Step 10/17: Branch pushed successfully
-
-⏳ Step 11/17: Creating comprehensive pull request...
-✅ Step 11/17: PR #47 created with AI-generated description
-
-⏳ Step 12/17: Updating Jira task status...
-✅ Step 12/17: Task moved to "In Review" with completion summary
-
-⏳ Step 13/17: Sending team notifications...
-✅ Step 13/17: Slack notification sent to #development
-
-✅ Workflow completed successfully!
-⏱️ Execution time: 0:01:32
-📊 Quality gates: All passed
-🔗 Pull Request: https://github.com/johndoe/my-app/pull/47
-```
-
----
-
-## What the System Generated
-
-### GitHub Repository Changes
-
-**New Feature Branch:** `feature/proj-123-add-user-authentication`
-
-**Files Created/Modified:**
-```
-📁 Your Repository  
-├── src/
-│   ├── auth/
-│   │   ├── __init__.py           # NEW: Authentication module
-│   │   ├── models.py             # NEW: User and token models
-│   │   ├── routes.py             # NEW: Login/logout endpoints  
-│   │   └── middleware.py         # NEW: JWT authentication middleware
-│   └── main.py                   # MODIFIED: Added auth routes
-├── tests/
-│   ├── test_auth.py              # NEW: Comprehensive auth tests
-│   └── test_integration.py       # MODIFIED: Updated integration tests
-├── requirements.txt              # MODIFIED: Added auth dependencies
-└── README.md                     # MODIFIED: Updated with auth documentation
-```
-
-### Pull Request with AI-Generated Description
-
-```markdown
-## 🎯 Overview
-Implement secure user authentication system as requested in PROJ-123.
-
-## 📋 Task Details  
-- **Task ID**: PROJ-123
-- **Title**: Add user authentication to dashboard
-- **Type**: Feature Implementation
-- **Priority**: High
-
-## 🔧 Implementation Summary
-Created comprehensive JWT-based authentication system with:
-
-### Enterprise Features:
-- **Secure Login/Logout**: Email/password with validation
-- **JWT Token Management**: Stateless authentication with refresh tokens
-- **Session Persistence**: Browser session management  
-- **Error Handling**: User-friendly error messages
-- **Middleware Protection**: Route-level authentication enforcement
-- **Security Best Practices**: Password hashing, token rotation
-
-### API Endpoints:
-- `POST /auth/login` - User authentication
-- `POST /auth/logout` - Session termination
-- `POST /auth/refresh` - Token refresh  
-- `GET /auth/me` - Current user profile
-
-## 📁 Files Changed
-
-### New Files:
-- `src/auth/__init__.py` - Authentication module initialization
-- `src/auth/models.py` - User and JWT token models
-- `src/auth/routes.py` - Authentication API endpoints
-- `src/auth/middleware.py` - JWT middleware for route protection
-- `tests/test_auth.py` - Comprehensive test suite
-
-### Modified Files:
-- `src/main.py` - Integrated authentication routes
-- `tests/test_integration.py` - Updated for auth integration
-- `requirements.txt` - Added authentication dependencies
-- `README.md` - Updated API documentation
-
-## 🧪 Testing & Quality
-✅ **Tests Status**: All Passed  
-📊 **Coverage**: 95%+
-🔍 **Test Results**: 15/15 tests passed
-🎯 **Quality Gates**: Black, Flake8, MyPy all passed
-
-## ✅ Acceptance Criteria
-- [x] User can log in with email/password
-- [x] Invalid credentials show helpful error messages
-- [x] Session persists across browser refresh  
-- [x] Logout clears session and redirects
-- [x] Comprehensive test coverage implemented
-
-## 🔗 Related Links
-- **Task**: [PROJ-123](https://yourcompany.atlassian.net/browse/PROJ-123)
-- **Commit**: [a1b2c3d](https://github.com/johndoe/my-app/commit/a1b2c3d)
-
----
-🤖 Generated by AI Development Automation System v2.0.0
-📊 Quality: 417 tests passing, production-ready deployment
-```
-
-### Jira Task Updates
-
-**Status Progression:** To Do → In Progress → In Review  
-
-**AI-Generated Progress Comment:**
-```
-🚀 Implementation Completed by AI Development System!
-
-Pull Request Created: PR #47
-Branch: feature/proj-123-add-user-authentication
-Commit: a1b2c3d
-
-📊 Implementation Summary
-- Files Modified: 4  
-- Files Created: 5
-- Lines Added: 245
-- Test Coverage: 95%+
-- Quality Gates: All passed
-
-🎯 Deliverables
-✅ JWT authentication system implemented
-✅ Login/logout endpoints created with validation
-✅ Session management working with persistence
-✅ Comprehensive error handling implemented
-✅ Tests passing with excellent coverage
-✅ Security best practices followed
-
-Ready for code review! 👀
-
-System Quality: 417 tests passing, enterprise deployment ready
-```
-
----
-
-## Available Features & Integrations
-
-### Core System Capabilities
-
-**🤖 AI-Powered Development:**
-- Claude AI integration for production-code generation
-- Context-aware code analysis and planning
-- Intelligent test generation with high coverage
-- Cost tracking and budget management
-
-**🔧 Plugin Architecture:**
-- **JiraPlugin**: Advanced task management with custom fields
-- **GitHubPlugin**: Full Git operations with branch protection
-- **SlackPlugin**: Team notifications with threaded conversations
-- **ConfluencePlugin**: Automated documentation updates
-- **ClaudePlugin**: Production-ready AI code generation
-
-**⚡ Enterprise Features:**
-- Circuit breaker pattern for API resilience
-- Rate limiting for external service protection
-- Comprehensive retry logic with exponential backoff
-- Real-time cost tracking and budget enforcement
-- 417 comprehensive tests with 95%+ coverage
-
-### Supported Project Types
-
-The system intelligently adapts to different technology stacks:
-
-**Frontend Projects:**
-- React, Vue, Angular applications
-- Next.js, Nuxt.js frameworks
-- TypeScript/JavaScript with proper typing
-- Component-based architecture patterns
-
-**Backend APIs:**
-- FastAPI, Django, Flask (Python)
-- Express.js, NestJS (Node.js)  
-- Spring Boot (Java)
-- RESTful API design patterns
-
-**Full-Stack Applications:**
-- Monorepo management
-- Microservices architecture
-- Database integration (PostgreSQL, MongoDB)
-- Authentication and authorization systems
-
-**Infrastructure & DevOps:**
-- Docker containerization
-- Kubernetes deployment manifests
-- CI/CD pipeline configurations
-- Infrastructure as Code (Terraform)
-
-### Quality Assurance Pipeline
-
-**Automated Quality Checks:**
-```bash
-# Code formatting (Black)
-poetry run black core/ plugins/ agents/ --check
-
-# Linting (Flake8 - PEP 8 compliance)  
-poetry run flake8 core/ plugins/ agents/
-
-# Import sorting (isort)
-poetry run isort core/ plugins/ agents/ --check
-
-# Type checking (MyPy)
-poetry run mypy core/ plugins/ agents/
-
-# Security scanning (Bandit)
-poetry run bandit -r core/ plugins/ agents/
-```
-
-**Testing Framework:**
-```bash
-# Complete test suite (417 tests)
-poetry run pytest tests/ -v
-
-# Category-specific testing
-poetry run pytest tests/unit/ -v                    # Unit tests
-poetry run pytest tests/integration/ -v             # Integration tests  
-poetry run pytest tests/performance/ -v             # Performance tests
-
-# Coverage reporting
-poetry run pytest tests/ --cov=core --cov=plugins --cov-report=html
-```
-
----
-
-## Advanced Usage Examples
-
-### Complex Multi-Service Integration
-
-**Full Enterprise Workflow:**
-```bash
-poetry run python -m workflows execute \
-  --workflow standard_dev_workflow \
-  --task-id PROJ-456 \
-  --repository-url git@github.com:enterprise/microservice.git \
-  --base-branch develop \
-  --team-channel "#backend-team" \
-  --notify-team \
-  --update-confluence \
-  --cost-limit 50.00
-```
-
-### Custom Workflow Variables
-
-**Environment-Specific Execution:**
-```bash
-# Development environment  
-poetry run python -m workflows execute \
-  --workflow standard_dev_workflow \
-  --task-id PROJ-789 \
-  --repository-url git@github.com:team/app.git \
-  --variables '{
-    "environment": "development",
-    "test_coverage_threshold": 90,
-    "enable_ai_documentation": true,
-    "pr_auto_merge": false,
-    "notification_priority": "high"
-  }'
-```
-
-### Batch Processing
-
-**Multiple Related Tasks:**
-```bash
-# Process multiple related tasks sequentially
-for task in PROJ-101 PROJ-102 PROJ-103; do
-  poetry run python -m workflows execute \
-    --workflow standard_dev_workflow \
-    --task-id $task \
-    --repository-url git@github.com:team/project.git
-done
-```
-
----
-
-## Troubleshooting Quick Reference
-
-### Common Issues & Solutions
-
-**❌ Authentication Failed:**
-```bash
-# Verify tokens are correctly set
-echo $JIRA_API_TOKEN | cut -c1-10  # Should show first 10 chars
-echo $GITHUB_TOKEN | cut -c1-10    # Should show first 10 chars
-
-# Test individual connections
-poetry run python -m plugins.jira_plugin test_connection
-poetry run python -m plugins.github_plugin test_access
-```
-
-**❌ Repository Access Denied:**
-```bash
-# Test SSH access
+# Check Git configuration
+git config --global user.name
+git config --global user.email
+
+# Test GitHub SSH access
 ssh -T git@github.com
-
-# Test repository access  
-git ls-remote git@github.com:yourorg/yourrepo.git
 ```
 
-**❌ Workflow Validation Errors:**
-```bash
-# Re-validate with detailed output
-poetry run python -m workflows validate standard_dev_workflow --verbose
+If SSH isn't set up, follow [GitHub's SSH key guide](https://docs.github.com/en/authentication/connecting-to-github-with-ssh).
 
-# Check plugin health
-poetry run python -m core.health_check --all-plugins --verbose
+### 5. Configure Repository
+
+Edit `real_development_workflow_by_id.py` to point to your repository:
+
+```python
+# Find this line and update it:
+self.repo_url = "git@github.com:YourUsername/YourRepo.git"
 ```
 
-**❌ Code Generation Issues:**
-```bash
-# Check AI API connectivity
-poetry run python -m plugins.claude_plugin test_connection
+Replace `YourUsername/YourRepo` with your actual GitHub repository.
 
-# Verify cost limits and usage
-poetry run python -m core.cost_tracker status
-```
+## 🧪 Test Your Setup
 
-### Performance Optimization
+### Quick Setup Verification
 
-**Speed Up Workflow Execution:**
-```bash
-# Enable parallel processing (where supported)
-export WORKFLOW_PARALLEL_EXECUTION=true
-
-# Use shallow git clones for faster repository operations
-export GIT_CLONE_DEPTH=1
-
-# Cache frequently accessed data
-export ENABLE_PLUGIN_CACHING=true
-```
-
----
-
-## Next Steps
-
-### Immediate Actions
-1. ✅ **Test Your First Workflow**: Start with a simple Jira task
-2. ✅ **Review Generated Code**: Understand AI code quality and patterns  
-3. ✅ **Configure Team Notifications**: Add Slack integration for collaboration
-4. ✅ **Setup Code Review Process**: Establish guidelines for AI-generated code
-
-### Advanced Configuration
-1. **Custom Workflows**: Create specialized workflows for your team's needs
-2. **Plugin Development**: Build custom integrations for internal tools
-3. **Cost Management**: Set up budgets and monitoring for AI usage
-4. **Enterprise Deployment**: Deploy using Docker/Kubernetes for scale
-
-### Learning Resources
-
-**Documentation:**
-- [Plugin Development Guide](./plugin_development.md)
-- [Workflow Configuration](./workflow_guide.md)  
-- [API Reference](./api/README.md)
-- [Architecture Overview](./architecture.md)
-
-**Examples:**
-- [Production Plugin Examples](./plugin_development_examples.md)
-- [Custom Workflow Templates](../examples/workflows/)
-- [Integration Patterns](../examples/integrations/)
-
-**Community:**
-- GitHub Issues for bug reports and feature requests
-- Community Slack for real-time support and discussions
-- Documentation Wiki for community guides and examples
-
----
-
-## Success Metrics
-
-### What to Expect
-
-**Development Velocity:**
-- **Traditional Development**: 2-4 hours for basic feature implementation
-- **AI-Assisted Development**: 90 seconds automated + 10 minutes review
-- **Quality Improvement**: 95%+ test coverage standard
-- **Consistency**: Standardized patterns across all generated code
-
-**Quality Assurance:**
-- 417 comprehensive tests ensure system reliability
-- Production-ready code generation with security best practices
-- Automated quality gates (formatting, linting, type checking)
-- Enterprise-grade error handling and resilience patterns
-
-**Team Productivity:**
-- Reduced manual coding for routine implementations
-- Consistent code patterns and documentation
-- Faster iteration cycles for feature development  
-- More time for architecture and business logic focus
-
----
-
-**🎉 Congratulations!**
-
-You now have a production-ready AI Development Automation System that transforms your development workflow. The system handles routine coding tasks while maintaining enterprise-grade quality, allowing your team to focus on higher-level architecture and business value.
-
-**Ready to automate your first workflow?** 🚀
+Run these commands to verify everything works:
 
 ```bash
-poetry run python -m workflows execute \
-  --workflow standard_dev_workflow \
-  --task-id YOUR-TASK-ID \
-  --repository-url YOUR-REPOSITORY-URL
+# 1. Test Python environment
+poetry run python -c "print('✅ Python environment works')"
+
+# 2. Test Jira API connection
+poetry run python -c "
+from plugins.jira.api import JiraAPI
+from plugins.jira.config import JiraConfig
+config = JiraConfig.from_env()
+if config:
+    print('✅ Jira configuration loaded')
+else:
+    print('❌ Jira configuration missing')
+"
+
+# 3. Test Claude CLI
+claude --print "Test successful"
 ```
 
-**System Status:** ✅ 417 tests passing, enterprise deployment ready, AI-powered development automation active.
+### Test With a Real Task
+
+1. **Find a Jira task ID** in your project (e.g., `PROJ-123`)
+2. **Run the workflow** with a test task:
+
+```bash
+poetry run python real_development_workflow_by_id.py PROJ-123
+```
+
+3. **Expected behavior:**
+   - Fetches task from Jira ✅
+   - Moves task to In Progress ✅  
+   - Clones repository to `./temp` ✅
+   - Opens Terminal with Claude CLI ✅
+
+4. **In the Terminal session:**
+   - Work with Claude CLI
+   - Create some test files
+   - Exit Claude CLI (Ctrl+C)
+
+5. **Auto-completion should:**
+   - Create GitHub PR ✅
+   - Update Jira task to Done ✅
+   - Clean up `./temp` directory ✅
+
+## 🎯 Your First Automated Development Session
+
+### Example Workflow
+
+Let's say you have task `PROJ-456` to "Add user authentication":
+
+1. **Launch the workflow:**
+   ```bash
+   poetry run python real_development_workflow_by_id.py PROJ-456
+   ```
+
+2. **The system will:**
+   - Fetch task details from Jira
+   - Move task to "In Progress"
+   - Clone your repository to `./temp`
+   - Open Terminal with Claude CLI
+
+3. **In the Terminal with Claude CLI:**
+   ```
+   > Help me implement user authentication for this project
+   ```
+
+4. **Work with Claude to:**
+   - Analyze the codebase
+   - Create authentication components
+   - Add necessary dependencies
+   - Write tests
+
+5. **When finished, exit Claude CLI:**
+   - Press `Ctrl+C` or type `exit`
+
+6. **The system automatically:**
+   - Commits your changes
+   - Pushes to GitHub
+   - Creates a pull request
+   - Updates Jira task to Done
+   - Cleans up temp files
+
+## 🛠️ Troubleshooting
+
+### Common Setup Issues
+
+#### "Jira configuration not available"
+- Check your `.env` file exists
+- Verify all environment variables are set
+- Test your API key in Jira web interface
+
+#### "Claude CLI not found"
+- Ensure Claude CLI is installed: `claude --version`
+- Add Claude CLI to your PATH
+- Restart your terminal after installation
+
+#### "Repository clone failed"
+- Test SSH access: `ssh -T git@github.com`
+- Check repository URL in the code
+- Verify you have access to the repository
+
+#### "No Terminal window opens"
+- Ensure you're on macOS (Terminal.app integration)
+- Check Terminal app permissions
+- Try running AppleScript manually
+
+### Getting Help
+
+If you encounter issues:
+
+1. **Check the main README** for additional context
+2. **Verify each prerequisite** is properly installed
+3. **Test components individually** (Jira API, Claude CLI, Git)
+4. **Check environment variables** are loaded correctly
+
+## 🚀 Next Steps
+
+Once your setup is working:
+
+1. **Try with different task types** - See how Claude CLI handles various development tasks
+2. **Customize branch naming** - Modify the branch naming pattern if needed
+3. **Integrate with your team** - Share the setup process with team members
+4. **Optimize your workflow** - Adjust timeouts and settings as needed
+
+## 💡 Pro Tips
+
+### Efficient Usage
+
+- **Use descriptive Jira task summaries** - They become branch names and commit messages
+- **Save files frequently** in the Claude CLI session - Changes are auto-detected
+- **Work incrementally** - Exit and restart Claude CLI if sessions get too long
+- **Review PRs promptly** - The system creates well-documented PRs ready for review
+
+### Workflow Optimization  
+
+- **Batch similar tasks** - Process multiple related tasks in sequence
+- **Use consistent naming** - Maintain consistent Jira task naming for better automation
+- **Monitor temp directory** - It should always be empty after completion
+- **Check PR descriptions** - The system generates detailed PR descriptions automatically
+
+You're now ready to use the AI Development Automation System! 🎉

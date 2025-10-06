@@ -1,372 +1,179 @@
-# Everything All At Once
-## AI Development Automation System
+# AI Development Automation System
 
-> **Automate your entire software development lifecycle with AI - from project planning to code implementation, PR creation, and documentation.**
+A complete end-to-end automation system that integrates Jira task management, Claude CLI development sessions, and GitHub workflow automation.
 
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
----
-
-## 🚀 What This Does
-
-**Everything All At Once** is a universal, plugin-based AI development automation system that orchestrates your entire development workflow:
-
-- **🧠 AI Planning**: Break complex projects into manageable tasks
-- **⚡ Autonomous Development**: AI agents implement features from task to PR
-- **🔌 Universal Plugins**: Works with any tool combination (Jira+GitHub, Linear+GitLab, etc.)
-- **📋 Workflow Engine**: Customize your team's development process
-- **💰 Cost Controls**: Built-in budget management and token tracking
-- **📚 Auto Documentation**: Keep docs up-to-date automatically
-
-## 🎯 The Complete Workflow
-
-```
-USER: "Build an e-commerce API with user auth"
-  ↓
-CLAUDE: Analyzes requirements → Creates project plan → Breaks into 20+ tasks
-  ↓
-SYSTEM: Creates GitHub repo + Jira project + Confluence space
-  ↓
-USER: Assigns "AUTH-123: Implement JWT auth" to AI agent
-  ↓
-AI AGENT: Clones repo → Creates branch → Generates code → Creates PR → Updates docs → Notifies team
-  ↓
-HUMAN: Reviews PR and approves or requests changes
-```
-
-## ⚡ Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- Python 3.11+
-- Poetry (for dependency management)
-- Docker & Docker Compose (optional, for services)
-- API keys for your tools (GitHub, Jira, Claude, etc.)
+1. **Python 3.11+** with Poetry installed
+2. **Claude CLI** installed and configured
+3. **Git** configured with SSH access to your repositories
+4. **Environment Variables** configured for Jira integration
+
+### Environment Setup
+
+Create a `.env` file with your Jira credentials:
+
+```bash
+JIRA_BASE_URL=https://your-domain.atlassian.net
+JIRA_API_KEY=your_api_key
+JIRA_USERNAME=your_email@domain.com
+JIRA_PROJECT_KEY=YOUR_PROJECT_KEY
+```
 
 ### Installation
 
 ```bash
-# 1. Clone and setup
-git clone https://github.com/yourorg/everything-all-at-once
-cd everything-all-at-once
-
-# 2. Install dependencies with Poetry
+# Install dependencies
 poetry install
 
-# 3. Configure environment
-cp .env.example .env
-# Edit .env with your API keys
-
-# 4. Configure plugins
-cp config.yaml.example config.yaml
-# Edit config.yaml for your tool stack
-
-# 5. Start services (optional)
-docker-compose up -d
-
-# 6. Launch
-poetry run uvicorn api.main:app --reload
+# Verify Claude CLI is available
+claude --version
 ```
 
-### Your First Project
+## 🎯 Main Workflow
+
+### Usage
+
+Run the complete automated development workflow:
 
 ```bash
-# Create a new project
-curl -X POST http://localhost:8000/api/v1/project/create \
-  -H "Content-Type: application/json" \
-  -d '{
-    "description": "E-commerce API with user authentication",
-    "requirements": ["User auth", "Product catalog", "Shopping cart"],
-    "tech_stack": ["Python", "FastAPI", "PostgreSQL"]
-  }'
-
-# Assign a task to AI
-curl -X POST http://localhost:8000/api/v1/task/AUTH-123/assign-to-agent
+poetry run python real_development_workflow_by_id.py TASK-123
 ```
 
-The AI agent will:
-✅ Fetch task details from Jira  
-✅ Create a feature branch  
-✅ Generate production-ready code  
-✅ Create a pull request  
-✅ Update task status  
-✅ Notify your team  
+Replace `TASK-123` with your actual Jira task ID.
 
-## 🏗️ Architecture
+### What Happens
 
-```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│   FastAPI   │    │   Planning  │    │Development  │
-│Orchestrator │ ─► │    Agent    │ ─► │    Agent    │
-└─────────────┘    └─────────────┘    └─────────────┘
-       │                   │                   │
-       └───────────────────┼───────────────────┘
-                           │
-                  ┌─────────────┐
-                  │  Workflow   │
-                  │   Engine    │
-                  └─────────────┘
-                           │
-          ┌────────────────┼────────────────┐
-          │                │                 │
-    ┌──────────┐    ┌──────────┐    ┌──────────┐
-    │   Jira   │    │  GitHub  │    │  Slack   │
-    │ Linear   │    │  GitLab  │    │ Discord  │
-    └──────────┘    └──────────┘    └──────────┘
-```
+1. **📋 Fetches task from Jira** - Gets task details and validates access
+2. **🔄 Moves task to In Progress** - Updates Jira status automatically  
+3. **💬 Adds automation comment** - Documents workflow start in Jira
+4. **📁 Clones repository** - Downloads repo to `./temp` directory
+5. **🌿 Creates feature branch** - Names it `TASK-ID_summary_timestamp`
+6. **🚀 Launches Claude CLI** - Opens Terminal session in repo directory
+7. **⏳ Waits for completion** - Monitors until you exit Claude CLI
+8. **🔧 Auto-completion** - When you exit Claude CLI:
+   - ✅ Commits and pushes your changes
+   - ✅ Creates GitHub pull request
+   - ✅ Updates Jira task to Done
+   - ✅ Adds completion comment with PR link
+   - ✅ Cleans up `./temp` directory completely
 
-## 🔌 Supported Integrations
+### Your Experience
 
-| Category | Supported Tools |
-|----------|----------------|
-| **Task Management** | Jira, Linear, Asana, Monday.com |
-| **Version Control** | GitHub, GitLab, Bitbucket |
-| **Documentation** | Confluence, Notion, GitBook |
-| **Communication** | Slack, Discord, Microsoft Teams |
-| **AI Providers** | Anthropic Claude, OpenAI |
+1. **Run the command** - The workflow launches
+2. **Terminal opens** - Claude CLI starts in the repository directory
+3. **Work with Claude** - Implement features, create files, make changes
+4. **Exit Claude CLI** - Press Ctrl+C or type `exit`
+5. **Everything else is automatic** - PR created, Jira updated, cleanup done
 
-## 📋 Core Features
+## 🔧 Manual Completion (If Needed)
 
-### 🤖 AI Agents
-- **PlanningAgent**: Breaks projects into epics and tasks
-- **DevelopmentAgent**: Implements tasks autonomously
-- **ReviewAgent**: Automated code review (coming soon)
-- **TestingAgent**: Test generation and execution (coming soon)
+If the workflow gets interrupted, you can manually complete it:
 
-### 🔧 Plugin System
-- **Universal Design**: Works with any tool combination
-- **Standard Interfaces**: Consistent API across all plugins
-- **Custom Plugins**: Easy to add new integrations
-
-### 📊 Workflow Engine
-- **YAML Configuration**: Define your team's process
-- **Variable Substitution**: Dynamic data flow between steps
-- **Error Handling**: Automatic retry and rollback
-- **Conditional Logic**: Smart workflow branching
-
-### 💰 Cost Management
-```yaml
-limits:
-  max_cost_per_task: 5.00
-  max_tokens_per_task: 50000
-  monthly_budget: 500.00
-```
-
-## 📖 Documentation
-
-- [📐 Architecture Guide](docs/architecture.md) - Deep dive into system design
-- [🔌 Plugin Development](docs/plugin_development.md) - Build custom integrations
-- [📋 Workflow Guide](docs/workflow_guide.md) - Configure your processes
-- [🚀 Deployment Guide](docs/deployment.md) - Production setup
-- [🔧 API Reference](docs/api/) - Complete API documentation
-
-## 🛠️ Configuration
-
-### Main Config
-```yaml
-# config.yaml
-ai_provider:
-  type: "anthropic"
-  model: "claude-3-5-sonnet-20241022"
-
-plugins:
-  task_management:
-    provider: "jira"  # or "linear"
-  version_control:
-    provider: "github"  # or "gitlab"
-  
-limits:
-  monthly_budget: 500.00
-  max_cost_per_task: 5.00
-```
-
-### Plugin Config
-```yaml
-# plugins/jira.config.yaml
-connection:
-  url: "${JIRA_URL}"
-  email: "${JIRA_EMAIL}"
-  api_token: "${JIRA_API_TOKEN}"
-
-statuses:
-  todo: "To Do"
-  in_progress: "In Progress"
-  done: "Done"
-```
-
-## 🚀 Usage Examples
-
-### Create a Full Project
-```python
-from core.agent_context import AgentContext
-
-context = AgentContext()
-project = await context.create_project({
-    "name": "E-commerce Platform",
-    "description": "Full-stack e-commerce with React and Node.js",
-    "requirements": [
-        "User authentication system",
-        "Product catalog with search",
-        "Shopping cart functionality",
-        "Payment processing",
-        "Admin dashboard"
-    ]
-})
-```
-
-### Assign Task to AI Agent
-```python
-# The AI will handle everything automatically
-result = await context.assign_task_to_agent("ECOM-123")
-
-# Agent workflow:
-# 1. ✅ Fetch task details
-# 2. ✅ Analyze codebase
-# 3. ✅ Generate implementation plan
-# 4. ✅ Write production code
-# 5. ✅ Create pull request
-# 6. ✅ Update documentation
-# 7. ✅ Notify team
-```
-
-## 🔒 Security & Best Practices
-
-- **🔐 Secure by Default**: All API keys in environment variables
-- **🏗️ Sandboxed Agents**: Isolated execution environments
-- **👥 Human Gates**: PR approval required before merge
-- **📊 Audit Logging**: Complete action tracking
-- **💸 Cost Limits**: Automatic budget enforcement
-
-## 🛣️ Roadmap
-
-### ✅ Phase 1: Foundation (Completed)
-- ✅ Core plugin system and interfaces
-- ✅ AgentContext orchestrator
-- ✅ Configuration management system
-- ✅ Plugin registry and lifecycle management
-- ✅ Comprehensive test suites (417 tests passing)
-- ✅ CI/CD pipeline with quality gates
-
-### ✅ Phase 2: Core Plugins (Recently Completed)
-- ✅ Jira plugin with enhanced features
-- ✅ GitHub plugin with repository analysis
-- ✅ Slack plugin for team communication
-- ✅ Confluence plugin for documentation
-- ✅ Claude AI plugin for code generation
-- ✅ Workflow engine for AI-powered automation
-- ✅ Cost tracking and budget management
-
-### 🔄 Phase 3: Advanced Features (In Progress)
-- 🚧 Web UI dashboard
-- 🚧 Multi-repository support
-- 🚧 Advanced error recovery
-- 📋 Multi-agent collaboration
-
-### 📋 Phase 4: Enterprise Features
-- Performance optimization agent
-- Autonomous bug fixing
-- Advanced security features
-- Multi-tenant support
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
-### Development Setup
 ```bash
-# Install development dependencies
-poetry install --with dev
-
-# Run tests
-poetry run pytest
-
-# Run quality checks
-poetry run black core/ agents/ plugins/ tests/
-poetry run flake8 core/ agents/ plugins/
-poetry run isort core/ agents/ plugins/ tests/
-poetry run mypy core/ agents/ plugins/
-
-# Run security scan
-poetry run bandit -r core/ agents/ plugins/
-
-# Start development server
-poetry run uvicorn api.main:app --reload --log-level debug
+poetry run python complete_workflow.py TASK-123 branch-name
 ```
 
-## 📊 Quality & Testing
+This will finish the remaining steps: commit, push, PR creation, Jira updates, and cleanup.
 
-### Test Coverage
-- **417 tests** passing with comprehensive coverage
-- **Unit tests** for all core components and plugins
-- **Integration tests** for plugin interactions
-- **Automated quality gates** (formatting, linting, security)
+## 📁 Project Structure
 
-### Code Quality
-- ✅ **Black** formatting enforced
-- ✅ **Flake8** linting with clean codebase
-- ✅ **isort** import sorting
-- ✅ **Bandit** security scanning
-- ✅ **Type hints** with mypy validation
-
-### Success Metrics
-Organizations using this system typically see:
-- **⚡ 50-70%** reduction in routine development time
-- **📚 100%** task-documentation coverage
-- **💰 <$50/month** per active developer
-- **🎯 <5%** task rework rate
-
-## 💡 Examples
-
-### Jira + GitHub + Slack Setup
-```yaml
-plugins:
-  task_management:
-    provider: "jira"
-  version_control:
-    provider: "github"
-  communication:
-    provider: "slack"
+```
+├── real_development_workflow_by_id.py  # Main workflow script
+├── complete_workflow.py               # Manual completion utility  
+├── core/                              # Core system components
+│   ├── plugin_interface.py           # Base plugin interfaces
+│   ├── plugin_registry.py            # Plugin management
+│   └── exceptions.py                  # Custom exceptions
+├── plugins/                           # Plugin implementations
+│   └── jira/                         # Jira integration
+│       ├── api.py                    # Jira API wrapper
+│       ├── config.py                 # Configuration management
+│       └── tools.py                  # Jira utilities
+└── docs/                             # Documentation
+    └── getting_started.md           # Detailed setup guide
 ```
 
-### Linear + GitLab + Discord Setup
-```yaml
-plugins:
-  task_management:
-    provider: "linear"
-  version_control:
-    provider: "gitlab"
-  communication:
-    provider: "discord"
+## 🎯 Key Features
+
+### ✅ Complete Automation
+- **End-to-end workflow** from Jira task to merged PR
+- **No manual steps** after launching Claude CLI
+- **Automatic cleanup** - temp directory is always empty after completion
+
+### ✅ Robust Integration  
+- **Real Jira API calls** - Updates actual task status and comments
+- **GitHub integration** - Creates proper pull requests with detailed descriptions
+- **Claude CLI integration** - Full development environment with all tools available
+
+### ✅ Development-Friendly
+- **All dev tools available** - dotnet, python3, node, git work in Claude CLI session
+- **Proper git workflow** - Feature branches, meaningful commit messages
+- **Error handling** - Graceful recovery from interruptions
+
+### ✅ Smart Monitoring
+- **Process detection** - Automatically detects when Claude CLI session ends
+- **File-based markers** - Reliable completion detection mechanism  
+- **Timeout protection** - Won't hang indefinitely
+
+## 🛠️ Advanced Configuration
+
+### Repository Configuration
+
+Edit the repository URL in `real_development_workflow_by_id.py`:
+
+```python
+self.repo_url = "git@github.com:YourUsername/YourRepo.git"
 ```
 
-## 🆘 Support
+### Timeout Settings
 
-- **📖 Documentation**: [docs/](docs/)
-- **🐛 Issues**: [GitHub Issues](https://github.com/yourorg/everything-all-at-once/issues)
-- **💬 Discussions**: [GitHub Discussions](https://github.com/yourorg/everything-all-at-once/discussions)
-- **📧 Email**: support@yourorg.com
+The workflow waits up to 1 hour for Claude CLI sessions. Modify in the code:
 
-## 📄 License
+```python
+max_wait_time = 3600  # seconds
+```
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### Branch Naming
 
----
+Branch names follow the pattern: `TASK-ID_summary_timestamp`
 
-## 🌟 Why This Matters
+Example: `JIRA-123_implement_user_auth_152830`
 
-Modern development involves too much repetitive work:
-- Creating tasks in project management tools
-- Writing boilerplate code
-- Updating documentation
-- Creating pull requests
-- Notifying team members
+## 🎉 Success Indicators
 
-**This system automates all of that**, letting developers focus on architecture, complex problem-solving, and creative work.
+When the workflow completes successfully, you'll see:
 
-**The result**: Faster development, better consistency, happier developers.
+- ✅ **GitHub PR created** with your changes
+- ✅ **Jira task moved to Done** with completion comment
+- ✅ **Temp directory empty** - no leftover files
+- ✅ **All changes committed** and pushed to remote branch
 
----
+## 📞 Support
 
-*Ready to automate your development workflow? [Get started now](#quick-start)!*
+### Common Issues
+
+1. **"Jira API not available"** - Check your `.env` file and credentials
+2. **"Claude CLI not found"** - Ensure Claude CLI is installed and in PATH
+3. **"Repository clone failed"** - Verify SSH key setup for GitHub
+4. **"No changes detected"** - Make sure files are saved in the temp directory
+
+### Getting Help
+
+1. Check the detailed setup guide: `docs/getting_started.md`
+2. Verify your environment variables are configured
+3. Test Claude CLI works independently: `claude --version`
+4. Ensure your Jira API key has proper permissions
+
+## 🚀 What Makes This Special
+
+This system provides a **complete development automation experience**:
+
+- **Start with a Jira task** - Just provide the task ID
+- **Work naturally with Claude CLI** - Full development environment
+- **End with a ready PR** - Everything documented and organized
+- **Zero cleanup needed** - System manages all temporary files
+
+Perfect for rapid development cycles, feature implementation, and maintaining clean git history while leveraging AI-powered development assistance.
