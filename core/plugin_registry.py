@@ -1,6 +1,7 @@
 """Plugin registry for managing plugin discovery, loading, and lifecycle"""
 
 import importlib
+import importlib.util
 import inspect
 import logging
 from pathlib import Path
@@ -28,7 +29,7 @@ class PluginRegistry:
 
     def register_plugin(
         self, plugin_type: PluginType, plugin_name: str, plugin_class: Type[BasePlugin]
-    ):
+    ) -> None:
         """Register a plugin class
 
         Args:
@@ -309,7 +310,7 @@ class PluginRegistry:
         Returns:
             Dictionary containing plugin information
         """
-        info = {
+        info: Dict[str, Any] = {
             "total_registered": sum(len(plugins) for plugins in self._plugins.values()),
             "total_instances": len(self._instances),
             "plugin_paths": [str(p) for p in self._plugin_paths],
@@ -338,13 +339,13 @@ class PluginRegistry:
 
         return info
 
-    def discover_plugins(self) -> List[str]:
+    def discover_available_plugins(self) -> List[str]:
         """Discover available plugins in the plugins directory.
 
         Returns:
             List of discovered plugin names
         """
-        plugins = []
+        plugins: List[str] = []
         if not self.plugins_dir.exists():
             return plugins
 
@@ -377,7 +378,7 @@ class PluginRegistry:
 
     def register_all_plugins(self) -> None:
         """Register tools from all discovered plugins."""
-        for plugin_name in self.discover_plugins():
+        for plugin_name in self.discover_available_plugins():
             self.register_plugin_tools(plugin_name)
 
     def get_available_tools(self) -> List[str]:
@@ -388,7 +389,7 @@ class PluginRegistry:
         """
         return list(self.registered_tools.keys())
 
-    def execute_tool(self, tool_name: str, **kwargs) -> Any:
+    def execute_tool(self, tool_name: str, **kwargs: Any) -> Any:
         """Execute a registered tool.
 
         Args:

@@ -250,7 +250,7 @@ class TestPluginRegistry:
     def test_discover_plugins_directory_not_exist(self):
         """Test plugin discovery with non-existent directory."""
         registry = PluginRegistry("nonexistent")
-        plugins = registry.discover_plugins()
+        plugins = registry.discover_available_plugins()
         assert plugins == []
 
     @patch("pathlib.Path.exists")
@@ -272,7 +272,7 @@ class TestPluginRegistry:
         mock_iterdir.return_value = [mock_plugin_dir]
         mock_plugin_dir.__truediv__ = lambda self, x: mock_tools_file
 
-        plugins = self.registry.discover_plugins()
+        plugins = self.registry.discover_available_plugins()
         assert "test_plugin" in plugins
 
     def test_execute_tool_not_found(self):
