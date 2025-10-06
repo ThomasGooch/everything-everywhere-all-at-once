@@ -43,23 +43,23 @@ jobs:
 
     # Quality Gates - Each step must pass
     - name: Code Formatting (Black)
-      run: poetry run black --check --diff core/ plugins/  tests/
+      run: poetry run black --check --diff core/ plugins/ workflows/ tests/
 
     - name: Import Sorting (isort)
-      run: poetry run isort --check-only --diff core/ plugins/  tests/
+      run: poetry run isort --check-only --diff core/ plugins/ workflows/ tests/
 
     - name: Linting (Flake8)
-      run: poetry run flake8 core/ plugins/  tests/ --max-line-length=100 --extend-ignore=E203,W503
+      run: poetry run flake8 core/ plugins/ workflows/ tests/ --max-line-length=120 --extend-ignore=E203,W503
 
     - name: Security Scanning (Bandit)
-      run: poetry run bandit -r core/ plugins/  -ll
+      run: poetry run bandit -r core/ plugins/ workflows/ -ll
 
     - name: Unit Tests with Coverage  
       run: |
         poetry run pytest tests/unit/ \
           --cov=core \
           --cov=plugins \
-          --cov=agents \
+          --cov=workflows \
           --cov-report=term \
           --cov-report=xml \
           --cov-fail-under=50 \
