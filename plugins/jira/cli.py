@@ -6,14 +6,14 @@ from .api import JiraAPI
 
 
 @click.group()
-def jira():
+def jira() -> None:
     """Jira task management operations."""
     pass
 
 
 @jira.command("get-task")
 @click.argument("task_id")
-def get_task(task_id: str):
+def get_task(task_id: str) -> None:
     """Get task details."""
     try:
         api = JiraAPI()
@@ -27,7 +27,7 @@ def get_task(task_id: str):
 @jira.command("update-status")
 @click.argument("task_id")
 @click.argument("status")
-def update_status(task_id: str, status: str):
+def update_status(task_id: str, status: str) -> None:
     """Update task status."""
     try:
         api = JiraAPI()
@@ -44,7 +44,7 @@ def update_status(task_id: str, status: str):
 @click.argument("project_key")
 @click.argument("summary")
 @click.option("--description", default="")
-def create_task(project_key: str, summary: str, description: str):
+def create_task(project_key: str, summary: str, description: str) -> None:
     """Create a new task."""
     click.echo(f"Created task in {project_key}: {summary}")
 

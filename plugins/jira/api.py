@@ -4,7 +4,7 @@ import asyncio
 import base64
 import json
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 import aiohttp
 
@@ -15,14 +15,17 @@ logger = logging.getLogger(__name__)
 
 class JiraAPI:
     """Direct Jira API wrapper for autonomous execution."""
+    
+    config: JiraConfig
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize Jira API wrapper."""
-        self.config = JiraConfig.from_env()
-        if not self.config:
+        config = JiraConfig.from_env()
+        if not config:
             raise ValueError(
                 "Jira configuration not available in environment variables"
             )
+        self.config = config  # Now MyPy knows this is not None
 
         # Create auth header
         auth_string = f"{self.config.username}:{self.config.api_key}"

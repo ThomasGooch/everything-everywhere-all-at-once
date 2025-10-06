@@ -5,7 +5,7 @@ import logging
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import aiohttp
 
@@ -16,14 +16,17 @@ logger = logging.getLogger(__name__)
 
 class GitHubAPI:
     """GitHub API wrapper for autonomous execution with Git operations."""
+    
+    config: GitHubConfig
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize GitHub API wrapper."""
-        self.config = GitHubConfig.from_env()
-        if not self.config:
+        config = GitHubConfig.from_env()
+        if not config:
             raise ValueError(
                 "GitHub configuration not available in environment variables"
             )
+        self.config = config  # Now MyPy knows this is not None
 
     # Git Operations
     def clone_repository(
@@ -153,7 +156,7 @@ class GitHubAPI:
 
     # GitHub API Operations
     async def create_pull_request_async(
-        self, branch_name: str, title: str, body: str = "", base_branch: str = None
+        self, branch_name: str, title: str, body: str = "", base_branch: Optional[str] = None
     ) -> Dict[str, Any]:
         """Create a pull request using GitHub API.
 
@@ -206,7 +209,7 @@ class GitHubAPI:
             return {"success": False, "error": str(e)}
 
     def create_pull_request(
-        self, branch_name: str, title: str, body: str = "", base_branch: str = None
+        self, branch_name: str, title: str, body: str = "", base_branch: Optional[str] = None
     ) -> Dict[str, Any]:
         """Synchronous wrapper for create_pull_request_async."""
         return asyncio.run(
@@ -282,7 +285,7 @@ class GitHubAPI:
         return f"{task_id}: {summary}\n\n🤖 Generated with automated workflow"
 
     def generate_pr_body(
-        self, task_id: str, task_details: Dict[str, Any] = None
+        self, task_id: str, task_details: Optional[Dict[str, Any]] = None
     ) -> str:
         """Generate PR description with task details.
 
