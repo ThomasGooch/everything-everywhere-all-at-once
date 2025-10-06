@@ -145,7 +145,7 @@ class PluginRegistry:
         # First try exact match with plugin ID
         if plugin_name in self._instances:
             return self._instances[plugin_name]
-        
+
         # Then search through all instances to find one with matching name
         for plugin_id, instance in self._instances.items():
             if plugin_id.endswith(f".{plugin_name}"):
@@ -340,14 +340,14 @@ class PluginRegistry:
 
     def discover_plugins(self) -> List[str]:
         """Discover available plugins in the plugins directory.
-        
+
         Returns:
             List of discovered plugin names
         """
         plugins = []
         if not self.plugins_dir.exists():
             return plugins
-            
+
         for plugin_dir in self.plugins_dir.iterdir():
             if plugin_dir.is_dir() and (plugin_dir / "tools.py").exists():
                 plugins.append(plugin_dir.name)
@@ -355,17 +355,21 @@ class PluginRegistry:
 
     def register_plugin_tools(self, plugin_name: str) -> None:
         """Register tools from a specific plugin.
-        
+
         Args:
             plugin_name: Name of the plugin to register tools from
         """
         try:
-            tools_module = importlib.import_module(f"{self.plugins_dir.name}.{plugin_name}.tools")
-            if hasattr(tools_module, 'register_tools'):
+            tools_module = importlib.import_module(
+                f"{self.plugins_dir.name}.{plugin_name}.tools"
+            )
+            if hasattr(tools_module, "register_tools"):
                 plugin_tools = tools_module.register_tools()
                 if plugin_tools:
                     self.registered_tools.update(plugin_tools)
-                    logger.info(f"Registered {len(plugin_tools)} tools from plugin {plugin_name}")
+                    logger.info(
+                        f"Registered {len(plugin_tools)} tools from plugin {plugin_name}"
+                    )
         except ImportError as e:
             logger.warning(f"Could not load plugin {plugin_name}: {e}")
         except Exception as e:
@@ -378,7 +382,7 @@ class PluginRegistry:
 
     def get_available_tools(self) -> List[str]:
         """Get list of all available tool names.
-        
+
         Returns:
             List of registered tool names
         """
@@ -386,20 +390,20 @@ class PluginRegistry:
 
     def execute_tool(self, tool_name: str, **kwargs) -> Any:
         """Execute a registered tool.
-        
+
         Args:
             tool_name: Name of the tool to execute
             **kwargs: Arguments to pass to the tool
-            
+
         Returns:
             Tool execution result
-            
+
         Raises:
             ValueError: If tool is not found
         """
         if tool_name not in self.registered_tools:
             raise ValueError(f"Tool '{tool_name}' not found")
-        
+
         try:
             return self.registered_tools[tool_name](**kwargs)
         except Exception as e:

@@ -9,7 +9,7 @@ from .plugin_registry import PluginRegistry
 
 __all__ = [
     "BaseSystemError",
-    "SecurityError", 
+    "SecurityError",
     "ValidationError",
     "BasePlugin",
     "PluginType",
