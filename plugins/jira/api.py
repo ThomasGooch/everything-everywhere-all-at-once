@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class JiraAPI:
     """Direct Jira API wrapper for autonomous execution."""
-    
+
     config: JiraConfig
 
     def __init__(self) -> None:

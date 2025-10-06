@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class GitHubAPI:
     """GitHub API wrapper for autonomous execution with Git operations."""
-    
+
     config: GitHubConfig
 
     def __init__(self) -> None:
@@ -156,7 +156,11 @@ class GitHubAPI:
 
     # GitHub API Operations
     async def create_pull_request_async(
-        self, branch_name: str, title: str, body: str = "", base_branch: Optional[str] = None
+        self,
+        branch_name: str,
+        title: str,
+        body: str = "",
+        base_branch: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Create a pull request using GitHub API.
 
@@ -209,7 +213,11 @@ class GitHubAPI:
             return {"success": False, "error": str(e)}
 
     def create_pull_request(
-        self, branch_name: str, title: str, body: str = "", base_branch: Optional[str] = None
+        self,
+        branch_name: str,
+        title: str,
+        body: str = "",
+        base_branch: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Synchronous wrapper for create_pull_request_async."""
         return asyncio.run(
