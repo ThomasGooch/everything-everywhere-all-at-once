@@ -260,18 +260,18 @@ The development workflow has been initiated. A development environment will be s
             # Build Claude CLI command with context info
             intro_msgs = [
                 f"echo '🚀 Claude CLI Session for {self.task_id}'",
-                f"echo 'Working in: {self.temp_dir}'", 
+                f"echo 'Working in: {self.temp_dir}'",
                 f"echo 'Branch: {self.branch_name}'",
                 f"echo 'Task: {task_summary}'",
                 "echo ''",
                 "echo '💡 All dev tools available: dotnet, python3, node, git'",
                 "echo '🚀 Starting Claude CLI...'",
                 "echo '⚠️  When you exit Claude CLI, the workflow will auto-complete!'",
-                "echo ''"
+                "echo ''",
             ]
             claude_cmd = f"cd '{self.temp_dir}' && {' && '.join(intro_msgs)} && claude"
             complete_cmd = f"{claude_cmd} ; echo '✅ Claude CLI session ended' && touch .claude_session_complete"
-            
+
             applescript = f"""
             tell application "Terminal"
                 activate
