@@ -1,0 +1,1 @@
+"""Jira plugin for modular Claude CLI integration."""

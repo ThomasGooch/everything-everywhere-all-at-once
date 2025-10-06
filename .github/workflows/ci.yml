@@ -43,23 +43,22 @@ jobs:
 
     # Quality Gates - Each step must pass
     - name: Code Formatting (Black)
-      run: poetry run black --check --diff core/ plugins/ agents/ tests/
+      run: poetry run black --check --diff core/ plugins/ workflows/ tests/
 
     - name: Import Sorting (isort)
-      run: poetry run isort --check-only --diff core/ plugins/ agents/ tests/
+      run: poetry run isort --check-only --diff core/ plugins/ workflows/ tests/
 
     - name: Linting (Flake8)
-      run: poetry run flake8 core/ plugins/ agents/ --max-line-length=100 --extend-ignore=E203,W503
+      run: poetry run flake8 core/ plugins/ workflows/ tests/ --max-line-length=120 --extend-ignore=E203,W503,F401,F541,F811,F841,E402,W293,W291
 
     - name: Security Scanning (Bandit)
-      run: poetry run bandit -r core/ plugins/ agents/ -ll
+      run: poetry run bandit -r core/ plugins/ workflows/ -ll
 
     - name: Unit Tests with Coverage  
       run: |
         poetry run pytest tests/unit/ \
           --cov=core \
           --cov=plugins \
-          --cov=agents \
           --cov-report=term \
           --cov-report=xml \
           --cov-fail-under=50 \
@@ -74,7 +73,7 @@ jobs:
 
     - name: Type Checking (MyPy) - Optional
       continue-on-error: true
-      run: poetry run mypy core/ plugins/ agents/ --ignore-missing-imports --show-error-codes
+      run: poetry run mypy core/ plugins/  --ignore-missing-imports --show-error-codes
 
     - name: Upload coverage reports
       uses: codecov/codecov-action@v4

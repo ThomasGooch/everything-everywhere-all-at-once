@@ -1,1 +1,1 @@
-"""Test package for AI Development Orchestrator"""
+"""Tests for AI Development Automation System."""
