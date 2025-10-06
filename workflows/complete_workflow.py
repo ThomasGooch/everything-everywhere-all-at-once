@@ -4,21 +4,23 @@ Complete Workflow - Handles interrupted workflows
 Completes remaining automation steps with robust error recovery
 """
 
-import subprocess
-import shutil
 import asyncio
+import shutil
+import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 # Add project root to path for plugin imports
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
+from plugins.github.tools import GitHubTools
+
 # Import YOUR actual plugins
 from plugins.jira.api import JiraAPI
-from plugins.github.tools import GitHubTools
 
 load_dotenv()
 
@@ -155,7 +157,8 @@ Branch: {self.branch_name or 'main'}
 Pull Request: {pr_url or 'No PR created'}
 Completed: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
-The automated development workflow has successfully completed the implementation. Please review the pull request and merge when ready."""
+The automated development workflow has successfully completed the implementation. 
+Please review the pull request and merge when ready."""
 
             result = await self.jira_api.add_comment_async(self.task_id, comment)
             if result.get("success", False):

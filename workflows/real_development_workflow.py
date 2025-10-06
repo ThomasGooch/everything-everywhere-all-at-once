@@ -4,21 +4,23 @@ REAL Development Workflow by ID - Simple and Direct
 Uses ./temp directory, launches Claude CLI in repo, cleans up after PR
 """
 
-import subprocess
 import shutil
-import time
+import subprocess
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 # Add project root to path for plugin imports
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
+from plugins.github.tools import GitHubTools
+
 # Import YOUR actual plugins
 from plugins.jira.api import JiraAPI
-from plugins.github.tools import GitHubTools
 
 load_dotenv()
 
@@ -255,10 +257,25 @@ The development workflow has been initiated. A development environment will be s
                 marker_file.unlink()  # Remove if exists
 
             # Create AppleScript to launch Terminal with Claude CLI and auto-completion
+            # Build Claude CLI command with context info
+            intro_msgs = [
+                f"echo '🚀 Claude CLI Session for {self.task_id}'",
+                f"echo 'Working in: {self.temp_dir}'", 
+                f"echo 'Branch: {self.branch_name}'",
+                f"echo 'Task: {task_summary}'",
+                "echo ''",
+                "echo '💡 All dev tools available: dotnet, python3, node, git'",
+                "echo '🚀 Starting Claude CLI...'",
+                "echo '⚠️  When you exit Claude CLI, the workflow will auto-complete!'",
+                "echo ''"
+            ]
+            claude_cmd = f"cd '{self.temp_dir}' && {' && '.join(intro_msgs)} && claude"
+            complete_cmd = f"{claude_cmd} ; echo '✅ Claude CLI session ended' && touch .claude_session_complete"
+            
             applescript = f"""
             tell application "Terminal"
                 activate
-                do script "cd '{self.temp_dir}' && echo '🚀 Claude CLI Session for {self.task_id}' && echo 'Working in: {self.temp_dir}' && echo 'Branch: {self.branch_name}' && echo 'Task: {task_summary}' && echo '' && echo '💡 All dev tools available: dotnet, python3, node, git' && echo '🚀 Starting Claude CLI...' && echo '⚠️  When you exit Claude CLI, the workflow will auto-complete!' && echo '' && claude ; echo '✅ Claude CLI session ended' && touch .claude_session_complete"
+                do script "{complete_cmd}"
             end tell
             """
 
@@ -413,7 +430,8 @@ Branch: {self.branch_name or 'main'}
 Pull Request: {pr_url or 'No PR created'}
 Completed: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
-The automated development workflow has successfully completed the implementation. Please review the pull request and merge when ready."""
+The automated development workflow has successfully completed the implementation. 
+Please review the pull request and merge when ready."""
 
             print(f"   🔄 ACTUALLY adding completion comment...")
             result = await self.jira_api.add_comment_async(self.task_id, comment)

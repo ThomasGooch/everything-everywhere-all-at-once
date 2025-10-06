@@ -1,7 +1,8 @@
 """Unit tests for core exceptions."""
 
 import pytest
-from core.exceptions import PluginError, PluginValidationError, PluginConnectionError
+
+from core.exceptions import PluginConnectionError, PluginError, PluginValidationError
 
 
 class TestPluginExceptions:
@@ -32,13 +33,13 @@ class TestPluginExceptions:
         # Test that we can catch specific exceptions
         with pytest.raises(PluginValidationError):
             raise PluginValidationError("Validation error")
-            
+
         with pytest.raises(PluginConnectionError):
             raise PluginConnectionError("Connection error")
-            
+
         # Test that we can catch base exception
         with pytest.raises(PluginError):
             raise PluginValidationError("Validation error")
-            
+
         with pytest.raises(PluginError):
             raise PluginConnectionError("Connection error")

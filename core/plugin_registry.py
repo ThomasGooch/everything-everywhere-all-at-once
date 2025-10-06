@@ -4,7 +4,7 @@ import importlib
 import inspect
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type, Callable
+from typing import Any, Callable, Dict, List, Optional, Type
 
 from .plugin_interface import BasePlugin, PluginError, PluginType, PluginValidationError
 

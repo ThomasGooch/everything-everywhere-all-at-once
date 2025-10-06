@@ -1,6 +1,7 @@
 """CLI interface for Jira plugin."""
 
 import click
+
 from .api import JiraAPI
 
 

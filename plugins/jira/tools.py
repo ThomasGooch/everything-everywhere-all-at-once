@@ -1,7 +1,7 @@
 """Jira tools for Claude CLI integration."""
 
 import os
-from typing import Dict, Any, Callable
+from typing import Any, Callable, Dict
 
 from .api import JiraAPI
 
