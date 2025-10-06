@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
+from plugins.confluence.tools import ConfluenceTools
 from plugins.github.tools import GitHubTools
 
 # Import YOUR actual plugins
@@ -35,6 +36,7 @@ class WorkflowExecutor:
         self.jira_api = None
         self.task_details = None
         self.github_tools = None
+        self.confluence_tools = None
 
     async def initialize_jira(self):
         """Initialize Jira API connection."""
@@ -170,6 +172,54 @@ Please review the pull request and merge when ready."""
             print(f"❌ Jira operations failed: {e}")
             return False
 
+    async def create_confluence_documentation(self):
+        """Create Confluence documentation for the completed task."""
+        print(f"\n📖 **CREATING CONFLUENCE DOCUMENTATION**")
+
+        try:
+            # Initialize Confluence tools
+            self.confluence_tools = ConfluenceTools()
+            space_info = self.confluence_tools.get_space_info()
+            print(
+                f"✅ Confluence tools initialized for space: {space_info['space_key']}"
+            )
+
+            # Get PR URL for documentation
+            pr_url = getattr(self, "pr_url", None)
+            if not pr_url and self.branch_name and self.github_tools:
+                repo_info = self.github_tools.get_repository_info()
+                repo_name = repo_info.get("repo_full_name", "repository")
+                pr_url = f"https://github.com/{repo_name}/compare/{self.branch_name}?expand=1"
+
+            # Create task documentation
+            print(f"🔄 Creating documentation for {self.task_id}...")
+            result = await self.confluence_tools.create_task_documentation_async(
+                self.task_id,
+                self.task_details,
+                pr_url,
+                "Task completed via AI Development Automation System",
+            )
+
+            if result.get("success", False):
+                action = result.get("action", "created")
+                print(f"✅ Documentation {action} successfully!")
+                print(f"📄 Page: {result.get('page_title', 'Documentation')}")
+                print(f"🌐 URL: {result.get('page_url', 'N/A')}")
+                return True
+            else:
+                print(
+                    f"❌ Failed to create documentation: {result.get('error', 'Unknown error')}"
+                )
+                # Don't fail the completion if documentation fails
+                print(f"⚠️ Continuing despite documentation failure")
+                return True
+
+        except Exception as e:
+            print(f"❌ Confluence documentation failed: {e}")
+            # Don't fail the completion if documentation fails
+            print(f"⚠️ Continuing despite documentation failure")
+            return True
+
     def cleanup_temp_directory(self):
         """Clean up temp directory after completion."""
         print(f"\n🧹 **CLEANING UP TEMP DIRECTORY**")
@@ -214,6 +264,13 @@ Please review the pull request and merge when ready."""
             # Complete Jira operations
             if not await self.complete_jira_operations():
                 return {"success": False, "error": "Failed to complete Jira operations"}
+
+            # Create Confluence documentation
+            if not await self.create_confluence_documentation():
+                return {
+                    "success": False,
+                    "error": "Failed to create Confluence documentation",
+                }
 
             # Cleanup
             self.cleanup_temp_directory()
